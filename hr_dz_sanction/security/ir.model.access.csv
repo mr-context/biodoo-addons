@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_sanction_user,hr.sanction user,model_hr_sanction,hr.group_hr_user,1,1,1,0
+access_hr_sanction_manager,hr.sanction manager,model_hr_sanction,hr.group_hr_manager,1,1,1,1
+access_hr_sanction_type_user,hr.sanction.type user,model_hr_sanction_type,hr.group_hr_user,1,0,0,0
+access_hr_sanction_type_manager,hr.sanction.type manager,model_hr_sanction_type,hr.group_hr_manager,1,1,1,1
+access_hr_sanction_fault_user,hr.sanction.fault user,model_hr_sanction_fault,hr.group_hr_user,1,0,0,0
+access_hr_sanction_fault_manager,hr.sanction.fault manager,model_hr_sanction_fault,hr.group_hr_manager,1,1,1,1

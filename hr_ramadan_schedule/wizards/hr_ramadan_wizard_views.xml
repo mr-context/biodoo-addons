@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_ramadan_wizard_view_form" model="ir.ui.view">
+        <field name="name">hr.ramadan.wizard.form</field>
+        <field name="model">hr.ramadan.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Horaires Ramadan">
+
+                <group>
+                    <field name="calendar_id" readonly="1"/>
+                    <field name="ramadan_date_start"/>
+                    <field name="mode" widget="radio"/>
+                </group>
+
+                <!-- ── Mode uniforme ──────────────────────────────────── -->
+                <group string="Horaires (tous les employés)"
+                       invisible="mode != 'uniform'">
+                    <field name="hour_from" widget="float_time"
+                           help="00:00 = conserver l'heure de début originale de chaque ligne"/>
+                    <field name="hour_to" widget="float_time"
+                           required="mode == 'uniform'"/>
+                </group>
+
+                <!-- ── Mode par genre : Hommes ───────────────────────── -->
+                <group string="Horaires — Hommes"
+                       invisible="mode != 'gender'">
+                    <field name="hour_from" widget="float_time"
+                           help="00:00 = conserver l'heure de début originale de chaque ligne"/>
+                    <field name="hour_to" widget="float_time"
+                           required="mode == 'gender'"/>
+                </group>
+
+                <!-- ── Mode par genre : Femmes ───────────────────────── -->
+                <group string="Horaires — Femmes"
+                       invisible="mode != 'gender'">
+                    <field name="hour_from_female" widget="float_time"
+                           help="00:00 = même heure de début que les hommes"/>
+                    <field name="hour_to_female" widget="float_time"
+                           required="mode == 'gender'"/>
+                </group>
+
+                <!-- ── Destinataires ─────────────────────────────────── -->
+                <group string="Notifications">
+                    <field name="notify_user_ids"
+                           widget="many2many_tags"
+                           options="{'no_create': True}"
+                           help="Recevront l&apos;email d&apos;activation et le rappel automatique a J+26."/>
+                </group>
+
+                <!-- ── Infos ─────────────────────────────────────────── -->
+                <div class="alert alert-info mt-2" role="alert">
+                    <i class="fa fa-info-circle me-2" title="Information"/>
+                    Les horaires originaux du calendrier sont conservés.
+                    Désactiver le toggle <strong>Mode Ramadan</strong>
+                    restaure automatiquement les horaires normaux.
+                </div>
+
+                <div class="alert alert-warning" role="alert">
+                    <i class="fa fa-bell me-2" title="Notification"/>
+                    Un rappel automatique sera envoyé aux destinataires sélectionnés
+                    <strong>3 à 4 jours avant la fin estimée</strong> du Ramadan (J+26).
+                </div>
+
+                <footer>
+                    <button name="action_apply" type="object"
+                            string="Activer le mode Ramadan" class="btn-primary"/>
+                    <button string="Annuler" class="btn-secondary" special="cancel"/>
+                </footer>
+
+            </form>
+        </field>
+    </record>
+</odoo>

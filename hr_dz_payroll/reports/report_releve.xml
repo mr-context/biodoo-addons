@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_releve_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <div class="page">
+                        <t t-set="lines" t-value="doc.get_report_data()"/>
+
+                        <div style="margin-bottom:12px;">
+                            <h4 style="margin:0;" t-field="doc.employee_id.company_id.name"/>
+                        </div>
+
+                        <h3 style="text-align:center; text-transform:uppercase;">
+                            Relevé des Émoluments
+                        </h3>
+
+                        <table style="width:100%; margin-bottom:12px; font-size:11px;">
+                            <tr>
+                                <td><strong>Employé : </strong><t t-out="doc.employee_id.name"/></td>
+                                <td><strong>Matricule : </strong><t t-out="doc.employee_id.matricule or '—'"/></td>
+                                <td><strong>Fonction : </strong><t t-out="doc.employee_id.job_id.name or '—'"/></td>
+                            </tr>
+                        </table>
+
+                        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+                            <thead>
+                                <tr style="background-color:#f0f0f0;">
+                                    <th style="border:1px solid #999; padding:5px; text-align:center;">Période</th>
+                                    <th style="border:1px solid #999; padding:5px; text-align:center;">Jours</th>
+                                    <th style="border:1px solid #999; padding:5px; text-align:right;">Salaire de poste (DA)</th>
+                                    <th style="border:1px solid #999; padding:5px; text-align:right;">Base imposable (DA)</th>
+                                    <th style="border:1px solid #999; padding:5px; text-align:right;">Net perçu (DA)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="lines" t-as="line">
+                                    <tr>
+                                        <td style="border:1px solid #ccc; padding:4px; text-align:center;"><t t-out="line['period']"/></td>
+                                        <td style="border:1px solid #ccc; padding:4px; text-align:center;"><t t-out="'%.0f' % line['nb_jours']"/></td>
+                                        <td style="border:1px solid #ccc; padding:4px; text-align:right;"><t t-out="'{:,.2f}'.format(line['brut'])"/></td>
+                                        <td style="border:1px solid #ccc; padding:4px; text-align:right;"><t t-out="'{:,.2f}'.format(line['imposable'])"/></td>
+                                        <td style="border:1px solid #ccc; padding:4px; text-align:right;"><t t-out="'{:,.2f}'.format(line['net'])"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                            <tfoot>
+                                <tr style="background-color:#f0f0f0; font-weight:bold;">
+                                    <td style="border:1px solid #999; padding:5px;">TOTAL</td>
+                                    <td style="border:1px solid #999; padding:5px; text-align:center;"><t t-out="'%.0f' % sum(l['nb_jours'] for l in lines)"/></td>
+                                    <td style="border:1px solid #999; padding:5px; text-align:right;"><t t-out="'{:,.2f}'.format(sum(l['brut'] for l in lines))"/></td>
+                                    <td style="border:1px solid #999; padding:5px; text-align:right;"><t t-out="'{:,.2f}'.format(sum(l['imposable'] for l in lines))"/></td>
+                                    <td style="border:1px solid #999; padding:5px; text-align:right;"><t t-out="'{:,.2f}'.format(sum(l['net'] for l in lines))"/></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

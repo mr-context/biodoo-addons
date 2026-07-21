@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         hr.sanction.type — Configuration des types de sanction
+    ================================================================ -->
+    <record id="view_sanction_type_list" model="ir.ui.view">
+        <field name="name">hr.sanction.type.list</field>
+        <field name="model">hr.sanction.type</field>
+        <field name="arch" type="xml">
+            <list string="Types de sanction" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="degree"/>
+                <field name="description"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sanction_type_form" model="ir.ui.view">
+        <field name="name">hr.sanction.type.form</field>
+        <field name="model">hr.sanction.type</field>
+        <field name="arch" type="xml">
+            <form string="Type de sanction">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="degree"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Description optionnelle…"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sanction_type" model="ir.actions.act_window">
+        <field name="name">Types de sanction</field>
+        <field name="res_model">hr.sanction.type</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ================================================================
+         hr.sanction.fault — Configuration des types de faute
+    ================================================================ -->
+    <record id="view_sanction_fault_list" model="ir.ui.view">
+        <field name="name">hr.sanction.fault.list</field>
+        <field name="model">hr.sanction.fault</field>
+        <field name="arch" type="xml">
+            <list string="Types de faute" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="degree"/>
+                <field name="description"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sanction_fault_form" model="ir.ui.view">
+        <field name="name">hr.sanction.fault.form</field>
+        <field name="model">hr.sanction.fault</field>
+        <field name="arch" type="xml">
+            <form string="Type de faute">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="degree"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Description optionnelle…"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sanction_fault" model="ir.actions.act_window">
+        <field name="name">Types de faute</field>
+        <field name="res_model">hr.sanction.fault</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ================================================================
+         Menus Configuration
+    ================================================================ -->
+    <menuitem
+        id="menu_sanction_config"
+        name="Sanctions disciplinaires"
+        parent="hr.menu_human_resources_configuration"
+        sequence="80"/>
+
+    <menuitem
+        id="menu_sanction_type_config"
+        name="Types de sanction"
+        parent="menu_sanction_config"
+        action="action_sanction_type"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_sanction_fault_config"
+        name="Types de faute"
+        parent="menu_sanction_config"
+        action="action_sanction_fault"
+        sequence="20"/>
+
+</odoo>

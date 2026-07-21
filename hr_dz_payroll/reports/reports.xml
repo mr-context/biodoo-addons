@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_report_ats" model="ir.actions.report">
+        <field name="name">ATS - Attestation de Travail et de Salaire</field>
+        <field name="model">hr.dz.ats</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_dz_payroll.report_ats_template</field>
+        <field name="report_file">hr_dz_payroll.report_ats_template</field>
+        <field name="binding_model_id" ref="model_hr_dz_ats"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_301bis" model="ir.actions.report">
+        <field name="name">État 301 Bis - Relevé des Émoluments</field>
+        <field name="model">hr.dz.301bis</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_dz_payroll.report_301bis_template</field>
+        <field name="report_file">hr_dz_payroll.report_301bis_template</field>
+        <field name="binding_model_id" ref="model_hr_dz_301bis"/>
+        <field name="binding_type">report</field>
+    </record>
+
+
+    <record id="action_report_releve" model="ir.actions.report">
+        <field name="name">Relevé des Émoluments</field>
+        <field name="model">hr.dz.releve.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_dz_payroll.report_releve_template</field>
+        <field name="report_file">hr_dz_payroll.report_releve_template</field>
+    </record>
+
+
+    <record id="action_report_recap_paie" model="ir.actions.report">
+        <field name="name">Récapitulatif de Paie Mensuel</field>
+        <field name="model">hr.dz.recap.paie.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_dz_payroll.report_recap_paie_template</field>
+        <field name="report_file">hr_dz_payroll.report_recap_paie_template</field>
+    </record>
+
+</odoo>

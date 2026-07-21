@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_hr_dz_releve_wizard" model="ir.actions.act_window">
+        <field name="name">Relevé des Émoluments</field>
+        <field name="res_model">hr.dz.releve.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="view_hr_dz_releve_wizard_form" model="ir.ui.view">
+        <field name="name">hr.dz.releve.wizard.form</field>
+        <field name="model">hr.dz.releve.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Relevé des Émoluments">
+                <group>
+                    <field name="employee_id"/>
+                    <field name="mode" widget="radio"/>
+                </group>
+
+                <group string="Période" invisible="mode != 'period'">
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                </group>
+
+                <group invisible="mode != 'months'">
+                    <group string="Année">
+                        <field name="year" nolabel="1"/>
+                    </group>
+                </group>
+                <group string="Mois" invisible="mode != 'months'">
+                    <group>
+                        <field name="month_01"/>
+                        <field name="month_02"/>
+                        <field name="month_03"/>
+                        <field name="month_04"/>
+                        <field name="month_05"/>
+                        <field name="month_06"/>
+                    </group>
+                    <group>
+                        <field name="month_07"/>
+                        <field name="month_08"/>
+                        <field name="month_09"/>
+                        <field name="month_10"/>
+                        <field name="month_11"/>
+                        <field name="month_12"/>
+                    </group>
+                </group>
+
+                <footer>
+                    <button name="action_print" type="object"
+                            string="Imprimer" class="btn-primary"/>
+                    <button string="Annuler" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+
+    <menuitem id="menu_hr_dz_releve_wizard"
+              name="Relevé des Émoluments"
+              parent="menu_payroll_reports"
+              action="action_hr_dz_releve_wizard"
+              sequence="20"/>
+
+</odoo>

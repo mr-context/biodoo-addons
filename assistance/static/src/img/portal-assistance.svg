@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Bulle de dialogue principale -->
+  <rect x="4" y="6" width="46" height="36" rx="6" ry="6" fill="#374874"/>
+  <!-- Bulle intérieure (fond clair) -->
+  <rect x="8" y="10" width="38" height="28" rx="4" ry="4" fill="#C1DBF6"/>
+  <!-- Pointe de la bulle -->
+  <polygon points="14,42 8,52 22,42" fill="#374874"/>
+  <!-- Point d'interrogation -->
+  <text x="27" y="32" font-family="Arial, sans-serif" font-size="22"
+        font-weight="bold" text-anchor="middle" fill="#374874">?</text>
+  <!-- Petite bulle réponse (coin bas-droit) -->
+  <circle cx="52" cy="48" r="10" fill="#FBDBD0"/>
+  <!-- Checkmark dans la petite bulle -->
+  <polyline points="47,48 51,52 57,44"
+            fill="none" stroke="#374874" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

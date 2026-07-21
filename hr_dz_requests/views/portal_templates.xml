@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         ÉTAPE 1 : Sélecteur de types RH
+         Rendu quand ?team_id=X mais aucun type encore choisi.
+    ================================================================ -->
+    <template id="portal_hr_type_picker" name="Choisir un type de demande RH">
+        <t t-call="portal.portal_layout">
+            <div class="row justify-content-center mt-4">
+                <div class="col-12 col-md-8">
+
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <a href="/my/assistance" class="text-muted" title="Retour">
+                            <i class="fa fa-arrow-left"/>
+                        </a>
+                        <h3 class="mb-0">
+                            Nouvelle demande —
+                            <span class="text-primary">
+                                <t t-esc="preselected_team.name"/>
+                            </span>
+                        </h3>
+                    </div>
+
+                    <p class="text-muted mb-4">
+                        Sélectionnez le type de demande que vous souhaitez soumettre.
+                    </p>
+
+                    <div class="row g-3">
+                        <t t-foreach="team_request_types" t-as="rtype">
+                            <div class="col-12 col-sm-6">
+                                <a t-attf-href="/my/assistance/new?team_id=#{preselected_team.id}&amp;type_id=#{rtype.id}"
+                                   class="card h-100 text-decoration-none text-reset
+                                          border shadow-sm">
+                                    <div class="card-body d-flex align-items-start gap-3 p-4">
+                                        <div class="rounded d-flex align-items-center
+                                                    justify-content-center flex-shrink-0"
+                                             style="width:52px;height:52px;font-size:1.5rem;
+                                                    background:#e8edf5;color:#374874;">
+                                            <i t-attf-class="bi #{rtype.icon or 'bi-file-earmark-text'}"/>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold fs-6">
+                                                <t t-esc="rtype.name"/>
+                                            </div>
+                                            <div t-if="rtype.description"
+                                                 class="text-muted small mt-1">
+                                                <t t-esc="rtype.description"/>
+                                            </div>
+                                            <div class="text-primary small mt-3 fw-semibold">
+                                                Remplir le formulaire
+                                                <i class="fa fa-arrow-right ms-1"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- Carte "Autre demande" — formulaire libre Sujet + Description -->
+                    <div class="row g-3 mt-1">
+                        <div class="col-12">
+                            <a t-attf-href="/my/assistance/new?team_id=#{preselected_team.id}&amp;generic=1"
+                               class="card text-decoration-none text-reset border">
+                                <div class="card-body d-flex align-items-center gap-3 p-3">
+                                    <div class="rounded d-flex align-items-center
+                                                justify-content-center flex-shrink-0"
+                                         style="width:44px;height:44px;font-size:1.2rem;
+                                                background:#f0f0f0;color:#666;">
+                                        <i class="bi bi-chat-dots"/>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">Autre demande</div>
+                                        <div class="text-muted small">
+                                            Demande libre ou question générale au service RH.
+                                        </div>
+                                    </div>
+                                    <div class="ms-auto text-secondary small">
+                                        Formulaire libre <i class="fa fa-arrow-right ms-1"/>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="/my/assistance" class="btn btn-sm btn-outline-secondary">
+                            <i class="fa fa-arrow-left me-1"/> Choisir un autre service
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ================================================================
+         ÉTAPE 2 : Formulaire de demande RH
+         Sections conditionnelles selon selected_type.code
+    ================================================================ -->
+    <template id="portal_hr_request_form" name="Formulaire de demande RH">
+        <t t-call="portal.portal_layout">
+            <div class="row justify-content-center mt-4">
+                <div class="col-12 col-md-9 col-lg-8">
+
+                    <!-- En-tête -->
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <a t-attf-href="/my/assistance/new?team_id=#{preselected_team.id}"
+                           class="text-muted" title="Retour au choix du type">
+                            <i class="fa fa-arrow-left"/>
+                        </a>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded d-flex align-items-center justify-content-center flex-shrink-0"
+                                 style="width:40px;height:40px;font-size:1.2rem;
+                                        background:#e8edf5;color:#374874;">
+                                <i t-attf-class="bi #{selected_type.icon or 'bi-file-earmark-text'}"/>
+                            </div>
+                            <div>
+                                <h3 class="mb-0">
+                                    <t t-esc="selected_type.name"/>
+                                </h3>
+                                <div class="text-muted small">
+                                    <t t-esc="preselected_team.name"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description du type -->
+                    <div t-if="selected_type.description"
+                         class="alert alert-light border mb-4">
+                        <i class="fa fa-info-circle me-2 text-primary"/>
+                        <t t-esc="selected_type.description"/>
+                    </div>
+
+                    <!-- ── Messages d'erreur ── -->
+                    <div t-if="error == 'server'" class="alert alert-danger" role="alert">
+                        <i class="fa fa-exclamation-circle me-1"/>
+                        Une erreur est survenue. Veuillez réessayer ou contacter l'administrateur.
+                    </div>
+                    <div t-if="error == 'type'" class="alert alert-danger" role="alert">
+                        <i class="fa fa-exclamation-circle me-1"/>
+                        Type de demande invalide.
+                    </div>
+                    <div t-if="error == 'destination'" class="alert alert-danger" role="alert">
+                        <i class="fa fa-exclamation-circle me-1"/>
+                        La destination est obligatoire.
+                    </div>
+                    <div t-if="error == 'dates'" class="alert alert-danger" role="alert">
+                        <i class="fa fa-exclamation-circle me-1"/>
+                        Les dates de début et de fin sont requises.
+                    </div>
+                    <div t-if="error == 'date'" class="alert alert-danger" role="alert">
+                        <i class="fa fa-exclamation-circle me-1"/>
+                        La date de sortie est requise.
+                    </div>
+                    <div t-if="error == 'departure_time'" class="alert alert-danger" role="alert">
+                        <i class="fa fa-exclamation-circle me-1"/>
+                        L'heure de départ est requise.
+                    </div>
+
+                    <!-- ════════════════════════════════════════════════
+                         FORMULAIRE
+                    ════════════════════════════════════════════════ -->
+                    <form action="/my/assistance/new" method="post"
+                          class="o_portal_details">
+                        <input type="hidden" name="csrf_token"
+                               t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="type_id"
+                               t-att-value="selected_type.id"/>
+                        <input type="hidden" name="team_id"
+                               t-att-value="preselected_team.id"/>
+
+                        <!-- ══════════════════════════════════
+                             ORDRE DE MISSION
+                        ══════════════════════════════════ -->
+                        <t t-if="selected_type.code == 'MISSION'">
+
+                            <!-- Objet de la mission -->
+                            <div class="mb-3">
+                                <label for="hr_mission_object" class="form-label fw-semibold">
+                                    Objet de la mission
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <textarea name="hr_mission_object" id="hr_mission_object"
+                                          class="form-control" rows="3"
+                                          placeholder="But du déplacement, réunion, formation, chantier…"
+                                          required="required"><t
+                                    t-esc="form_data.get('hr_mission_object', '')"/></textarea>
+                            </div>
+
+                            <!-- Destination -->
+                            <div class="mb-3">
+                                <label for="hr_destination" class="form-label fw-semibold">
+                                    Destination <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="hr_destination" id="hr_destination"
+                                       class="form-control"
+                                       t-att-value="form_data.get('hr_destination', '')"
+                                       placeholder="Ville, wilaya ou pays"
+                                       required="required"/>
+                            </div>
+
+                            <!-- Dates départ / retour -->
+                            <div class="row mb-3">
+                                <div class="col-12 col-sm-6 mb-3 mb-sm-0">
+                                    <label for="date_start" class="form-label fw-semibold">
+                                        Date de départ <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date" name="date_start" id="date_start"
+                                           class="form-control"
+                                           t-att-value="form_data.get('date_start', '')"
+                                           required="required"/>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label for="date_end" class="form-label fw-semibold">
+                                        Date de retour <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date" name="date_end" id="date_end"
+                                           class="form-control"
+                                           t-att-value="form_data.get('date_end', '')"/>
+                                </div>
+                            </div>
+
+                            <!-- Moyen de transport -->
+                            <div class="mb-3">
+                                <label for="hr_transport_mode" class="form-label fw-semibold">
+                                    Moyen de transport
+                                </label>
+                                <select name="hr_transport_mode" id="hr_transport_mode"
+                                        class="form-select">
+                                    <option value="">— Sélectionner —</option>
+                                    <t t-foreach="transport_labels.items()" t-as="item">
+                                        <option t-att-value="item[0]"
+                                                t-att-selected="form_data.get('hr_transport_mode') == item[0] or None">
+                                            <t t-esc="item[1]"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+
+                            <!-- Accompagnateurs -->
+                            <div class="mb-3">
+                                <label for="hr_companions" class="form-label fw-semibold">
+                                    Accompagnateurs
+                                </label>
+                                <textarea name="hr_companions" id="hr_companions"
+                                          class="form-control" rows="2"
+                                          placeholder="Noms et postes des collègues participant à la mission (optionnel)"><t
+                                    t-esc="form_data.get('hr_companions', '')"/></textarea>
+                            </div>
+
+                            <!-- Avance sur frais -->
+                            <div class="mb-3">
+                                <label for="hr_advance_amount" class="form-label fw-semibold">
+                                    Avance sur frais demandée (DA)
+                                </label>
+                                <input type="number" name="hr_advance_amount"
+                                       id="hr_advance_amount"
+                                       class="form-control" min="0" step="100"
+                                       t-att-value="form_data.get('hr_advance_amount', '')"
+                                       placeholder="0"/>
+                                <div class="form-text">
+                                    Laissez vide si aucune avance n'est nécessaire.
+                                </div>
+                            </div>
+
+                        </t>
+
+                        <!-- ══════════════════════════════════
+                             BON DE SORTIE
+                        ══════════════════════════════════ -->
+                        <t t-elif="selected_type.code == 'SORTIE'">
+
+                            <!-- Date de sortie -->
+                            <div class="mb-3">
+                                <label for="date_start" class="form-label fw-semibold">
+                                    Date de sortie <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" name="date_start" id="date_start"
+                                       class="form-control"
+                                       t-att-value="form_data.get('date_start', '')"
+                                       required="required"/>
+                            </div>
+
+                            <!-- Heure de départ -->
+                            <div class="mb-3">
+                                <label for="hr_departure_time" class="form-label fw-semibold">
+                                    Heure de départ <span class="text-danger">*</span>
+                                </label>
+                                <input type="time" name="hr_departure_time"
+                                       id="hr_departure_time"
+                                       class="form-control"
+                                       t-att-value="form_data.get('hr_departure_time', '')"
+                                       required="required"/>
+                            </div>
+
+                            <!-- Retour au poste (avant l'heure de retour) -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    Retour au poste prévu
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="d-flex gap-3">
+                                    <div class="form-check">
+                                        <input type="radio" name="hr_will_return"
+                                               id="will_return_yes" value="yes"
+                                               class="form-check-input"
+                                               t-att-checked="(form_data.get('hr_will_return', 'yes') == 'yes') or None"
+                                               onchange="toggleReturnTime()"/>
+                                        <label for="will_return_yes" class="form-check-label">
+                                            <i class="fa fa-check-circle text-success me-1"/>
+                                            Oui — je regagne mon poste
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="radio" name="hr_will_return"
+                                               id="will_return_no" value="no"
+                                               class="form-check-input"
+                                               t-att-checked="(form_data.get('hr_will_return') == 'no') or None"
+                                               onchange="toggleReturnTime()"/>
+                                        <label for="will_return_no" class="form-check-label">
+                                            <i class="fa fa-times-circle text-warning me-1"/>
+                                            Non — absent jusqu'à la fin de journée
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Heure de retour (cachée si "Non") -->
+                            <div class="mb-3" id="return_time_block"
+                                 t-att-style="'display:none' if form_data.get('hr_will_return') == 'no' else ''">
+                                <label for="hr_return_time" class="form-label fw-semibold">
+                                    Heure de retour prévue
+                                </label>
+                                <input type="time" name="hr_return_time"
+                                       id="hr_return_time"
+                                       class="form-control"
+                                       t-att-value="form_data.get('hr_return_time', '')"/>
+                            </div>
+                            <script type="text/javascript">
+                                function toggleReturnTime() {
+                                    var no = document.getElementById('will_return_no').checked;
+                                    document.getElementById('return_time_block').style.display = no ? 'none' : '';
+                                }
+                            </script>
+
+                            <!-- Motif -->
+                            <div class="mb-3">
+                                <label for="hr_sortie_reason" class="form-label fw-semibold">
+                                    Motif <span class="text-danger">*</span>
+                                </label>
+                                <select name="hr_sortie_reason" id="hr_sortie_reason"
+                                        class="form-select" required="required">
+                                    <option value="">— Sélectionner —</option>
+                                    <t t-foreach="sortie_reason_labels.items()" t-as="item">
+                                        <option t-att-value="item[0]"
+                                                t-att-selected="form_data.get('hr_sortie_reason') == item[0] or None">
+                                            <t t-esc="item[1]"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+
+                            <!-- Destination -->
+                            <div class="mb-3">
+                                <label for="hr_sortie_destination" class="form-label fw-semibold">
+                                    Lieu / Destination
+                                </label>
+                                <input type="text" name="hr_sortie_destination"
+                                       id="hr_sortie_destination"
+                                       class="form-control"
+                                       t-att-value="form_data.get('hr_sortie_destination', '')"
+                                       placeholder="Où vous rendez-vous ?"/>
+                            </div>
+
+                            <!-- Véhicule de service -->
+                            <div class="mb-4 form-check">
+                                <input type="checkbox" name="hr_vehicle_requested"
+                                       id="hr_vehicle_requested"
+                                       class="form-check-input"
+                                       t-att-checked="form_data.get('hr_vehicle_requested') or None"/>
+                                <label for="hr_vehicle_requested" class="form-check-label">
+                                    Je souhaite utiliser un véhicule de service
+                                </label>
+                            </div>
+
+                        </t>
+
+                        <!-- ══════════════════════════════════
+                             DEMANDE DE CONGÉ
+                        ══════════════════════════════════ -->
+                        <t t-elif="selected_type.code == 'CONGE'">
+
+                            <!-- Dates -->
+                            <div class="row mb-2">
+                                <div class="col-12 col-sm-6 mb-3 mb-sm-0">
+                                    <label for="date_start" class="form-label fw-semibold">
+                                        Date de début <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date" name="date_start" id="date_start"
+                                           class="form-control"
+                                           t-att-value="form_data.get('date_start', '')"
+                                           required="required"
+                                           onchange="updateDaysCount()"/>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label for="date_end" class="form-label fw-semibold">
+                                        Date de fin <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date" name="date_end" id="date_end"
+                                           class="form-control"
+                                           t-att-value="form_data.get('date_end', '')"
+                                           required="required"
+                                           onchange="updateDaysCount()"/>
+                                </div>
+                            </div>
+
+                            <!-- Compteur de jours (JS) -->
+                            <div class="mb-4">
+                                <span class="text-muted small">Durée : </span>
+                                <strong id="days_count_display" class="text-primary">—</strong>
+                                <script type="text/javascript">
+                                    function updateDaysCount() {
+                                        var s = document.getElementById('date_start').value;
+                                        var e = document.getElementById('date_end').value;
+                                        var el = document.getElementById('days_count_display');
+                                        if (s &amp;&amp; e) {
+                                            var d = Math.round((new Date(e) - new Date(s)) / 86400000) + 1;
+                                            el.textContent = d > 0 ? d + ' jour(s)' : '—';
+                                        } else { el.textContent = '—'; }
+                                    }
+                                </script>
+                            </div>
+
+                            <!-- Motif / Événement -->
+                            <div class="mb-3">
+                                <label for="hr_leave_reason" class="form-label fw-semibold">
+                                    Motif / Événement
+                                </label>
+                                <input type="text" name="hr_leave_reason" id="hr_leave_reason"
+                                       class="form-control"
+                                       t-att-value="form_data.get('hr_leave_reason', '')"
+                                       placeholder="Ex : congé annuel, mariage, naissance, décès…"/>
+                                <div class="form-text">
+                                    Obligatoire pour les congés exceptionnels.
+                                </div>
+                            </div>
+
+                            <!-- Remplaçant -->
+                            <div class="mb-3">
+                                <label for="hr_replacement_name" class="form-label fw-semibold">
+                                    Remplaçant(e) durant l'absence
+                                </label>
+                                <input type="text" name="hr_replacement_name"
+                                       id="hr_replacement_name"
+                                       class="form-control"
+                                       t-att-value="form_data.get('hr_replacement_name', '')"
+                                       placeholder="Nom et prénom du collègue remplaçant"/>
+                            </div>
+
+                        </t>
+
+                        <!-- ══════════════════════════════════
+                             Commentaire additionnel (tous types)
+                        ══════════════════════════════════ -->
+                        <div class="mb-4">
+                            <label for="hr_justification" class="form-label fw-semibold">
+                                Commentaire additionnel
+                            </label>
+                            <textarea name="hr_justification" id="hr_justification"
+                                      class="form-control" rows="3"
+                                      placeholder="Toute information complémentaire utile au service RH…"><t
+                                t-esc="form_data.get('hr_justification', '')"/></textarea>
+                        </div>
+
+                        <!-- ══════════════════════════════════
+                             Boutons
+                        ══════════════════════════════════ -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-paper-plane me-1"/> Envoyer la demande
+                            </button>
+                            <a t-attf-href="/my/assistance/new?team_id=#{preselected_team.id}"
+                               class="btn btn-outline-secondary">
+                                Annuler
+                            </a>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ================================================================
+         EXTEND détail ticket — badge validation + carte état + bouton impression
+         Héritage de assistance.portal_assistance_detail
+    ================================================================ -->
+    <template id="portal_assistance_detail_hr_validation"
+              inherit_id="assistance.portal_assistance_detail">
+
+        <!-- Ajouter badge de validation à côté du badge étape
+             Utilise hr_validation_state (variable pré-calculée en sudo par le contrôleur)
+             pour éviter tout accès ORM direct à hr.employee depuis le portail -->
+        <xpath expr="//div[hasclass('justify-content-md-end')]" position="inside">
+            <t t-if="hr_is_request">
+                <span t-att-class="'badge fs-6 ' + {
+                    'draft':            'bg-secondary',
+                    'manager_pending':  'bg-warning text-dark',
+                    'manager_approved': 'bg-info text-dark',
+                    'manager_refused':  'bg-danger',
+                    'hr_validated':     'bg-success',
+                    'hr_refused':       'bg-danger',
+                }.get(hr_validation_state, 'bg-secondary')">
+                    <i t-att-class="'me-1 fa ' + {
+                        'draft':            'fa-clock-o',
+                        'manager_pending':  'fa-hourglass-half',
+                        'manager_approved': 'fa-thumbs-up',
+                        'manager_refused':  'fa-thumbs-down',
+                        'hr_validated':     'fa-check-circle',
+                        'hr_refused':       'fa-times-circle',
+                    }.get(hr_validation_state, 'fa-clock-o')"/>
+                    <t t-esc="{
+                        'draft':            'Brouillon',
+                        'manager_pending':  'En attente — responsable',
+                        'manager_approved': 'Approuvé — responsable',
+                        'manager_refused':  'Refusé — responsable',
+                        'hr_validated':     'Validé RH',
+                        'hr_refused':       'Refusé RH',
+                    }.get(hr_validation_state, hr_validation_state)"/>
+                </span>
+            </t>
+        </xpath>
+
+        <!-- Insérer carte de validation avant la description -->
+        <xpath expr="//div[@t-if='ticket.description']" position="before">
+            <t t-if="hr_is_request">
+
+                <!-- Carte progression de validation -->
+                <div class="card mb-4">
+                    <div class="card-header fw-semibold">
+                        <i class="fa fa-tasks me-2"/>Suivi de la validation
+                    </div>
+                    <div class="card-body">
+
+                        <!-- Étapes visuelles -->
+                        <div class="d-flex align-items-center mb-3">
+
+                            <!-- Étape 1 : Soumise -->
+                            <div class="text-center" style="flex:1;">
+                                <div t-att-class="'rounded-circle mx-auto d-flex align-items-center justify-content-center ' + ('bg-success text-white' if hr_validation_state != 'draft' else 'bg-primary text-white')"
+                                     style="width:36px;height:36px;font-size:.85rem;">
+                                    <i class="fa fa-check" t-if="hr_validation_state != 'draft'"/>
+                                    <span t-else="">1</span>
+                                </div>
+                                <div class="small mt-1 text-muted">Soumise</div>
+                            </div>
+
+                            <div style="flex:2;height:3px;" t-att-class="'rounded ' + ('bg-success' if hr_validation_state not in ('draft','manager_pending') else ('bg-primary' if hr_validation_state == 'manager_pending' else 'bg-light border'))"/>
+
+                            <!-- Étape 2 : Responsable -->
+                            <div class="text-center" style="flex:1;">
+                                <div t-att-class="'rounded-circle mx-auto d-flex align-items-center justify-content-center ' + (
+                                    'bg-success text-white' if hr_validation_state in ('manager_approved', 'hr_validated', 'hr_refused') else
+                                    'bg-warning text-dark' if hr_validation_state == 'manager_pending' else
+                                    'bg-danger text-white' if hr_validation_state == 'manager_refused' else
+                                    'bg-light text-muted border'
+                                )" style="width:36px;height:36px;font-size:.85rem;">
+                                    <i t-att-class="'fa ' + (
+                                        'fa-check' if hr_validation_state in ('manager_approved', 'hr_validated', 'hr_refused') else
+                                        'fa-hourglass-half' if hr_validation_state == 'manager_pending' else
+                                        'fa-times' if hr_validation_state == 'manager_refused' else
+                                        ''
+                                    )" t-if="hr_validation_state != 'draft'"/>
+                                    <span t-else="">2</span>
+                                </div>
+                                <div class="small mt-1 text-muted">Responsable</div>
+                            </div>
+
+                            <div style="flex:2;height:3px;" t-att-class="'rounded ' + ('bg-success' if hr_validation_state == 'hr_validated' else ('bg-primary' if hr_validation_state == 'manager_approved' else 'bg-light border'))"/>
+
+                            <!-- Étape 3 : RH -->
+                            <div class="text-center" style="flex:1;">
+                                <div t-att-class="'rounded-circle mx-auto d-flex align-items-center justify-content-center ' + (
+                                    'bg-success text-white' if hr_validation_state == 'hr_validated' else
+                                    'bg-primary text-white' if hr_validation_state == 'manager_approved' else
+                                    'bg-danger text-white' if hr_validation_state == 'hr_refused' else
+                                    'bg-light text-muted border'
+                                )" style="width:36px;height:36px;font-size:.85rem;">
+                                    <i t-att-class="'fa ' + (
+                                        'fa-check' if hr_validation_state == 'hr_validated' else
+                                        'fa-times' if hr_validation_state == 'hr_refused' else
+                                        'fa-hourglass-half' if hr_validation_state == 'manager_approved' else
+                                        ''
+                                    )" t-if="hr_validation_state not in ('draft', 'manager_pending', 'manager_refused')"/>
+                                    <span t-else="">3</span>
+                                </div>
+                                <div class="small mt-1 text-muted">Validation RH</div>
+                            </div>
+
+                        </div>
+
+                        <!-- Infos de validation si disponibles -->
+                        <div t-if="hr_validation_state not in ('draft',)"
+                             class="row g-2 mt-1">
+                            <div t-if="hr_manager_name" class="col-6 col-md-4">
+                                <div class="text-muted small">Responsable hiérarchique</div>
+                                <div class="fw-semibold small">
+                                    <t t-esc="hr_manager_name"/>
+                                </div>
+                            </div>
+                            <div t-if="hr_manager_decision_date" class="col-6 col-md-4">
+                                <div class="text-muted small">Décision responsable</div>
+                                <div class="fw-semibold small">
+                                    <t t-esc="str(hr_manager_decision_date)[:16].replace('T', ' ')"/>
+                                </div>
+                            </div>
+                            <div t-if="hr_validated_name" class="col-6 col-md-4">
+                                <div class="text-muted small">Validé par (RH)</div>
+                                <div class="fw-semibold small">
+                                    <t t-esc="hr_validated_name"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerte refus / validation -->
+                        <div t-if="hr_validation_state == 'manager_refused'"
+                             class="alert alert-danger mt-3 mb-0" role="alert">
+                            <i class="fa fa-times-circle me-1"/>
+                            Votre demande a été refusée par votre responsable hiérarchique.
+                            Consultez les messages ci-dessous pour plus de détails.
+                        </div>
+                        <div t-if="hr_validation_state == 'hr_refused'"
+                             class="alert alert-danger mt-3 mb-0" role="alert">
+                            <i class="fa fa-times-circle me-1"/>
+                            Votre demande a été refusée par le service RH.
+                            Consultez les messages ci-dessous pour plus de détails.
+                        </div>
+                        <div t-if="hr_validation_state == 'hr_validated'"
+                             class="alert alert-success mt-3 mb-0" role="alert">
+                            <i class="fa fa-check-circle me-1"/>
+                            <strong>Votre demande a été validée par le service RH.</strong>
+                        </div>
+
+                    </div>
+
+                    <!-- Bouton impression ordre de mission -->
+                    <div t-if="hr_validation_state == 'hr_validated' and hr_request_type_code == 'MISSION'"
+                         class="card-footer">
+                        <a t-attf-href="/my/hr_request/#{ticket.id}/mission_order.pdf"
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fa fa-download me-1"/>
+                            Télécharger l'ordre de mission (PDF)
+                        </a>
+                    </div>
+
+                </div>
+
+            </t>
+        </xpath>
+
+    </template>
+
+</odoo>

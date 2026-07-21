@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Smart button sur la fiche employé -->
+    <record id="view_hr_employee_form_inherit_sanction" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.sanction</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_sanctions"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-gavel"
+                        invisible="sanction_count == 0">
+                    <field name="sanction_count" widget="statinfo"
+                           string="Sanctions"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

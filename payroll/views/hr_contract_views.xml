@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Inherit hr.employee form view to add payroll fields -->
+    <record id="hr_employee_view_form_payroll" model="ir.ui.view">
+        <field name="name">hr.employee.view.form.payroll</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <!-- Add payroll fields in HR Settings tab if it exists -->
+            <xpath expr="//page[@name='hr_settings']//group[@name='identification_group']" position="after">
+                <group string="Payroll" name="payroll_group">
+                    <field name="schedule_pay"/>
+                    <field name="struct_id" options="{'no_create': True}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Direct hr.version form view for standalone access -->
+    <record id="hr_version_view_form_payroll" model="ir.ui.view">
+        <field name="name">hr.version.view.form.payroll</field>
+        <field name="model">hr.version</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <form string="Contract Payroll Settings">
+                <sheet>
+                    <group>
+                        <group string="Employee">
+                            <field name="employee_id" readonly="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Payroll Configuration">
+                            <field name="schedule_pay"/>
+                            <field name="struct_id" options="{'no_create': True}"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

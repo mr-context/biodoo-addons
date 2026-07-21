@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Bandeau discret prêt actif dans la section "Mes demandes RH"
+         (visible uniquement si un prêt est en cours)
+    ================================================================ -->
+    <template id="portal_my_home_loan"
+              name="Portal My Home: Prêt salarial"
+              inherit_id="portal.portal_my_home"
+              priority="60">
+        <div id="portal_common_category" position="inside">
+            <t t-set="active_loan" t-value="request.env['hr.loan'].sudo().search([('employee_id.user_id', '=', request.env.user.id), ('state', 'in', ['approved', 'ongoing'])], limit=1)"/>
+            <t t-if="active_loan">
+                <t t-set="loan_pct" t-value="int(active_loan.amount_paid / active_loan.amount * 100) if active_loan.amount else 0"/>
+                <t t-set="loan_ticket" t-value="active_loan.ticket_id"/>
+                <div class="col-12 mb-2">
+                    <div class="d-flex align-items-center gap-3 px-3 py-2 rounded border border-warning-subtle bg-warning-subtle">
+                        <i class="fa fa-money text-warning"/>
+                        <span class="small">
+                            Prêt en cours —
+                            <strong><t t-esc="'{:,.0f}'.format(active_loan.amount_remaining).replace(',', ' ')"/> DA</strong>
+                            restants (<t t-esc="loan_pct"/>% remboursé)
+                        </span>
+                        <t t-if="loan_ticket">
+                            <a t-attf-href="/my/assistance/#{loan_ticket.id}"
+                               class="btn btn-sm btn-outline-warning ms-auto">
+                                <i class="fa fa-list me-1"/>Voir l'échéancier
+                            </a>
+                        </t>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </template>
+
+    <!-- ================================================================
+         Bloc LOAN dans le formulaire de demande portail
+         Inséré après le bloc CONGE dans portal_hr_request_form
+    ================================================================ -->
+    <template id="portal_hr_request_form_loan"
+              inherit_id="hr_dz_requests.portal_hr_request_form"
+              name="Formulaire prêt salarial">
+
+        <!-- Insérer le bloc LOAN juste avant le commentaire additionnel -->
+        <xpath expr="//div[hasclass('mb-4')][label[@for='hr_justification']]" position="before">
+            <t t-if="selected_type and selected_type.code == 'LOAN'">
+
+                <!-- Montant demandé — interface style ATM -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Montant demandé (DA) <span class="text-danger">*</span>
+                        <t t-if="loan_max_amount">
+                            <span class="text-muted fw-normal ms-2" style="font-size:0.85em;">
+                                (plafond : <strong><t t-esc="'{:,.0f}'.format(loan_max_amount).replace(',', ' ')"/> DA</strong>)
+                            </span>
+                        </t>
+                    </label>
+
+                    <!-- Boutons de suggestion rapide -->
+                    <t t-if="loan_amount_presets">
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            <t t-foreach="loan_amount_presets" t-as="preset">
+                                <button type="button"
+                                        class="btn btn-outline-primary btn-sm loan-preset-btn"
+                                        t-att-data-value="preset"
+                                        t-att-data-max="loan_max_amount or 999999999">
+                                    +<t t-esc="'{:,.0f}'.format(preset).replace(',', ' ')"/>
+                                </button>
+                            </t>
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    onclick="document.getElementById('hr_loan_amount').value=''; document.getElementById('loan_amount_display').textContent='0 DA';">
+                                <i class="fa fa-times me-1"/>Effacer
+                            </button>
+                        </div>
+                    </t>
+
+                    <!-- Affichage formaté du montant -->
+                    <div class="input-group">
+                        <input type="number" name="hr_loan_amount" id="hr_loan_amount"
+                               class="form-control form-control-lg fw-bold text-end"
+                               min="1" step="any" required="required"
+                               t-att-data-max="loan_max_amount or 0"
+                               t-att-value="form_data.get('hr_loan_amount', '')"
+                               oninput="updateLoanDisplay(this)"/>
+                        <span class="input-group-text fw-bold">DA</span>
+                    </div>
+                    <div class="mt-1">
+                        <span class="text-muted small" id="loan_amount_display">
+                            <t t-if="form_data.get('hr_loan_amount')">
+                                <t t-esc="form_data.get('hr_loan_amount')"/> DA
+                            </t>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- JS inline ATM -->
+                <script>
+                    function updateLoanDisplay(input) {
+                        var val = parseFloat(input.value) || 0;
+                        var max = parseFloat(input.dataset.max) || 0;
+                        var display = document.getElementById('loan_amount_display');
+                        if (max > 0 &amp;&amp; val > max) {
+                            input.value = max;
+                            val = max;
+                        }
+                        display.textContent = val > 0 ? val.toLocaleString('fr-DZ') + ' DA' : '';
+                    }
+                    document.querySelectorAll('.loan-preset-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            var input = document.getElementById('hr_loan_amount');
+                            var add = parseFloat(this.dataset.value) || 0;
+                            var max = parseFloat(this.dataset.max) || 999999999;
+                            var current = parseFloat(input.value) || 0;
+                            input.value = Math.min(current + add, max);
+                            updateLoanDisplay(input);
+                        });
+                    });
+                </script>
+
+                <!-- Nombre de mensualités -->
+                <div class="mb-3">
+                    <label for="hr_loan_nb_months" class="form-label fw-semibold">
+                        Nombre de mensualités souhaitées <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" name="hr_loan_nb_months" id="hr_loan_nb_months"
+                           class="form-control" min="1" max="60"
+                           t-att-value="form_data.get('hr_loan_nb_months', 6)"/>
+                    <div class="form-text text-muted">
+                        Le montant sera divisé en mensualités égales retenues sur votre bulletin de paie.
+                    </div>
+                </div>
+
+                <!-- Objet / projet -->
+                <div class="mb-3">
+                    <label for="hr_loan_reason" class="form-label fw-semibold">
+                        Objet de la demande <span class="text-danger">*</span>
+                    </label>
+                    <textarea name="hr_loan_reason" id="hr_loan_reason"
+                              class="form-control" rows="4" required="required"
+                              placeholder="Décrivez brièvement le motif et l'utilisation prévue du prêt (achat, réparation, urgence familiale…)"><t
+                        t-esc="form_data.get('hr_loan_reason', '')"/></textarea>
+                    <div class="form-text text-muted">
+                        Ces informations restent confidentielles et servent uniquement à l'évaluation de votre demande.
+                    </div>
+                </div>
+
+            </t>
+        </xpath>
+    </template>
+
+    <!-- ================================================================
+         Échéancier prêt salarial sur la page de détail du ticket
+    ================================================================ -->
+    <template id="portal_loan_schedule"
+              inherit_id="assistance.portal_assistance_detail"
+              name="Échéancier prêt salarial">
+
+        <xpath expr="//div[@t-if='ticket.description']" position="before">
+            <t t-if="ticket.hr_request_type_code == 'LOAN' and ticket.hr_loan_id">
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fa fa-money me-2"/>
+                            Prêt salarial — <t t-esc="ticket.hr_loan_id.name"/>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+
+                        <!-- Résumé chiffres -->
+                        <div class="row mb-3 text-center">
+                            <div class="col-4">
+                                <div class="fw-bold fs-5">
+                                    <t t-esc="'%.2f DA' % ticket.hr_loan_id.amount"/>
+                                </div>
+                                <small class="text-muted">Montant total</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold fs-5 text-success">
+                                    <t t-esc="'%.2f DA' % ticket.hr_loan_id.amount_paid"/>
+                                </div>
+                                <small class="text-muted">Remboursé</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold fs-5 text-warning">
+                                    <t t-esc="'%.2f DA' % ticket.hr_loan_id.amount_remaining"/>
+                                </div>
+                                <small class="text-muted">Restant</small>
+                            </div>
+                        </div>
+
+                        <!-- Barre de progression -->
+                        <t t-if="ticket.hr_loan_id.amount > 0">
+                            <t t-set="pct" t-value="int(ticket.hr_loan_id.amount_paid / ticket.hr_loan_id.amount * 100)"/>
+                            <div class="progress mb-3" style="height:10px;">
+                                <div class="progress-bar bg-success"
+                                     t-att-style="'width: ' + str(pct) + '%'"
+                                     t-att-aria-valuenow="pct"
+                                     aria-valuemin="0" aria-valuemax="100"/>
+                            </div>
+                        </t>
+
+                        <!-- Tableau échéancier -->
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mois</th>
+                                    <th class="text-end">Montant</th>
+                                    <th class="text-center">Statut</th>
+                                    <th class="text-center">Date paiement</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="ticket.hr_loan_id.loan_line_ids" t-as="line">
+                                    <tr t-att-class="'table-success' if line.paid else ''">
+                                        <td>
+                                            <span t-field="line.date"
+                                                  t-options='{"widget": "date", "format": "MMMM yyyy"}'/>
+                                        </td>
+                                        <td class="text-end">
+                                            <t t-esc="'%.2f DA' % line.amount"/>
+                                        </td>
+                                        <td class="text-center">
+                                            <span t-if="line.paid" class="badge bg-success">Payé</span>
+                                            <span t-else="" class="badge bg-secondary">En attente</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <t t-if="line.date_paid">
+                                                <span t-field="line.date_paid"
+                                                      t-options='{"widget": "date", "format": "dd/MM/yyyy"}'/>
+                                            </t>
+                                            <t t-else="">—</t>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+
+    <!-- ================================================================
+         Masquer le bouton "Fermer ma demande" pour les tickets de prêt
+         (c'est le RH qui gère le cycle de vie, pas l'employé)
+    ================================================================ -->
+    <template id="portal_loan_hide_close"
+              inherit_id="assistance.portal_assistance_detail"
+              name="Masquer clôture pour prêts">
+        <xpath expr="//a[hasclass('btn-outline-danger') and @t-attf-href]" position="attributes">
+            <attribute name="t-if">not ticket.close_date and ticket.hr_request_type_code != 'LOAN'</attribute>
+        </xpath>
+    </template>
+
+</odoo>

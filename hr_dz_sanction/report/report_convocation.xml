@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="report_convocation_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.internal_layout">
+                    <div class="page">
+
+                        <!-- En-tête société -->
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <strong>
+                                    <t t-esc="o.company_id.name"/>
+                                </strong>
+                                <div t-if="o.company_id.street">
+                                    <t t-esc="o.company_id.street"/>
+                                </div>
+                                <div t-if="o.company_id.city">
+                                    <t t-esc="o.company_id.city"/>
+                                </div>
+                            </div>
+                            <div class="col-6 text-end">
+                                <div>Réf. : <t t-esc="o.name or 'En cours'"/></div>
+                                <div>
+                                    Date :
+                                    <span t-field="o.date_convocation"
+                                          t-options='{"format": "dd MMMM yyyy"}'/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Titre -->
+                        <div class="text-center mb-5">
+                            <h2 class="text-decoration-underline">
+                                CONVOCATION À AUDITION
+                            </h2>
+                        </div>
+
+                        <!-- Corps -->
+                        <p>
+                            Nous avons l'honneur de vous convoquer à une audition
+                            disciplinaire le
+                            <strong>
+                                <span t-field="o.audition_date_planned"
+                                      t-options='{"format": "dd MMMM yyyy"}'/>
+                            </strong>
+                            dans les locaux de la Direction des Ressources Humaines.
+                        </p>
+
+                        <p>
+                            Cette audition concerne les faits suivants :<br/>
+                            <strong><t t-esc="o.fault_id.name"/></strong>
+                            survenus le
+                            <strong>
+                                <span t-field="o.date_incident"
+                                      t-options='{"format": "dd MMMM yyyy"}'/>
+                            </strong>.
+                        </p>
+
+                        <t t-if="o.convocation_note">
+                            <p>
+                                <t t-out="o.convocation_note"/>
+                            </p>
+                        </t>
+
+                        <p>
+                            Vous êtes informé(e) que vous avez le droit de vous
+                            faire assister par un représentant du personnel de votre
+                            choix lors de cette audition.
+                        </p>
+
+                        <p>
+                            Veuillez prendre connaissance de la présente et nous
+                            accuser réception en signant ci-dessous.
+                        </p>
+
+                        <!-- Signatures -->
+                        <div class="row mt-5">
+                            <div class="col-6 text-center">
+                                <p>L'intéressé(e)</p>
+                                <br/><br/><br/>
+                                <p>
+                                    <strong><t t-esc="o.employee_id.name"/></strong>
+                                </p>
+                                <p>Signature et date :</p>
+                                <div style="border-bottom:1px solid #000; margin:0 20px;"/>
+                            </div>
+                            <div class="col-6 text-center">
+                                <p>La Direction</p>
+                                <br/><br/><br/>
+                                <p>
+                                    <strong><t t-esc="o.user_id.name"/></strong>
+                                </p>
+                                <p>Signature :</p>
+                                <div style="border-bottom:1px solid #000; margin:0 20px;"/>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

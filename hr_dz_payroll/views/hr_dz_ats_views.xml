@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============ ATS Tree View ============ -->
+    <record id="hr_dz_ats_view_tree" model="ir.ui.view">
+        <field name="name">hr.dz.ats.tree</field>
+        <field name="model">hr.dz.ats</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="matricule"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="total_base_cotisable" sum="Total"/>
+                <field name="total_retenue_ss" sum="Total"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ============ ATS Form View ============ -->
+    <record id="hr_dz_ats_view_form" model="ir.ui.view">
+        <field name="name">hr.dz.ats.form</field>
+        <field name="model">hr.dz.ats</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_load" type="object"
+                            string="Charger" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_confirm" type="object"
+                            string="Confirmer" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object"
+                            string="Remettre en brouillon"
+                            invisible="state != 'done'"/>
+                    <button name="action_print" type="object"
+                            string="Imprimer" class="btn-secondary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Employé">
+                            <field name="employee_id" readonly="state != 'draft'"/>
+                            <field name="matricule"/>
+                            <field name="identification_id"/>
+                            <field name="birthday"/>
+                            <field name="place_of_birth"/>
+                            <field name="job_id"/>
+                        </group>
+                        <group string="Période">
+                            <field name="date_from" readonly="state != 'draft'"/>
+                            <field name="date_to" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Détail mensuel">
+                            <field name="line_ids" readonly="1">
+                                <list>
+                                    <field name="period"/>
+                                    <field name="nb_jours"/>
+                                    <field name="base_cotisable" sum="Total"/>
+                                    <field name="retenue_ss" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                    <group>
+                        <group>
+                            <field name="total_base_cotisable"/>
+                            <field name="total_retenue_ss"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============ ATS Search View ============ -->
+    <record id="hr_dz_ats_view_search" model="ir.ui.view">
+        <field name="name">hr.dz.ats.search</field>
+        <field name="model">hr.dz.ats</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <field name="name"/>
+                <separator/>
+                <filter name="draft" string="Brouillon" domain="[('state', '=', 'draft')]"/>
+                <filter name="done" string="Confirmé" domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter name="group_employee" string="Employé" context="{'group_by': 'employee_id'}"/>
+                <filter name="group_state" string="État" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ============ ATS Action ============ -->
+    <record id="hr_dz_ats_action" model="ir.actions.act_window">
+        <field name="name">ATS (Attestation Travail et Salaire)</field>
+        <field name="res_model">hr.dz.ats</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créez votre première Attestation de Travail et de Salaire
+            </p>
+            <p>
+                L'ATS est un document CNAS détaillant mois par mois les salaires et cotisations d'un employé.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ Menus ============ -->
+    <menuitem id="menu_payroll_reports"
+              name="Rapports"
+              parent="payroll.payroll_menu_root"
+              sequence="90"/>
+
+    <menuitem id="menu_hr_dz_ats"
+              name="ATS (Attestation Travail et Salaire)"
+              action="hr_dz_ats_action"
+              parent="menu_payroll_reports"
+              sequence="10"/>
+
+</odoo>

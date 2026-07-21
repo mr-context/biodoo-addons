@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============ FORM VIEW ============ -->
+    <record id="hr_irg_table_view_form" model="ir.ui.view">
+        <field name="name">hr.irg.table.form</field>
+        <field name="model">hr.irg.table</field>
+        <field name="arch" type="xml">
+            <form string="Table IRG">
+                <sheet>
+                    <div class="oe_button_box" name="button_box"/>
+                    <widget name="web_ribbon" title="Archivé" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Ex: Barème IRG 2022"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Paramètres">
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active" invisible="1"/>
+                            <field name="abatement_rate"/>
+                            <field name="abatement_min"/>
+                            <field name="abatement_max"/>
+                            <field name="exemption_threshold"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Tranches" name="lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="min_amount"/>
+                                    <field name="max_amount"/>
+                                    <field name="rate"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============ LIST VIEW ============ -->
+    <record id="hr_irg_table_view_list" model="ir.ui.view">
+        <field name="name">hr.irg.table.list</field>
+        <field name="model">hr.irg.table</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="exemption_threshold"/>
+                <field name="abatement_rate"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ============ ACTION ============ -->
+    <record id="hr_irg_table_action" model="ir.actions.act_window">
+        <field name="name">Table IRG</field>
+        <field name="res_model">hr.irg.table</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créer une table IRG
+            </p>
+            <p>
+                Définissez les tranches d'imposition IRG et les paramètres d'abattement.
+            </p>
+        </field>
+    </record>
+
+
+</odoo>

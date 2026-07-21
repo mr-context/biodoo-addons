@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Rapport QWeb — Titre de congé
+         Disponible après validation RH (state = 'validate')
+    ================================================================ -->
+
+    <template id="report_leave_certificate_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+
+                        <!-- Titre -->
+                        <div class="row mb-4">
+                            <div class="col-12 text-center">
+                                <h2 style="text-transform:uppercase;letter-spacing:2px;">
+                                    Titre de Congé
+                                </h2>
+                            </div>
+                        </div>
+
+                        <!-- Réf + Date de validation -->
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <strong>N° :</strong>
+                                <span t-esc="doc.name or '—'"/>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>Date de validation :</strong>
+                                <t t-if="doc.date_validation">
+                                    <span t-field="doc.date_validation"
+                                          t-options='{"widget": "date", "format": "dd/MM/yyyy"}'/>
+                                </t>
+                                <t t-else="">—</t>
+                            </div>
+                        </div>
+
+                        <!-- Informations agent -->
+                        <table class="table table-bordered o_main_table">
+                            <thead>
+                                <tr style="background-color:#e9ecef;">
+                                    <th colspan="4">Informations de l'agent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="width:25%;"><strong>Nom et prénom</strong></td>
+                                    <td style="width:25%;" t-esc="doc.employee_id.name or '—'"/>
+                                    <td style="width:25%;"><strong>Matricule</strong></td>
+                                    <td style="width:25%;" t-esc="doc.employee_id.matricule or '—'"/>
+                                </tr>
+                                <tr>
+                                    <td><strong>Poste</strong></td>
+                                    <td t-esc="doc.employee_id.job_id.name or '—'"/>
+                                    <td><strong>Direction / Service</strong></td>
+                                    <td t-esc="doc.employee_id.department_id.name or '—'"/>
+                                </tr>
+                                <tr>
+                                    <td><strong>Responsable</strong></td>
+                                    <td colspan="3" t-esc="doc.employee_id.parent_id.name or '—'"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Détails du congé -->
+                        <table class="table table-bordered o_main_table mt-4">
+                            <thead>
+                                <tr style="background-color:#e9ecef;">
+                                    <th colspan="4">Détails du congé</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="width:25%;"><strong>Type de congé</strong></td>
+                                    <td style="width:25%;" t-esc="doc.holiday_status_id.name or '—'"/>
+                                    <td style="width:25%;"><strong>Nombre de jours</strong></td>
+                                    <td style="width:25%;" t-esc="int(doc.number_of_days) if doc.number_of_days else '—'"/>
+                                </tr>
+                                <tr>
+                                    <td><strong>Du</strong></td>
+                                    <td>
+                                        <t t-if="doc.date_from">
+                                            <span t-field="doc.date_from"
+                                                  t-options='{"widget": "date", "format": "dd/MM/yyyy"}'/>
+                                        </t>
+                                        <t t-else="">—</t>
+                                    </td>
+                                    <td><strong>Au</strong></td>
+                                    <td>
+                                        <t t-if="doc.date_to">
+                                            <span t-field="doc.date_to"
+                                                  t-options='{"widget": "date", "format": "dd/MM/yyyy"}'/>
+                                        </t>
+                                        <t t-else="">—</t>
+                                    </td>
+                                </tr>
+                                <tr t-if="doc.name">
+                                    <td><strong>Motif</strong></td>
+                                    <td colspan="3" t-esc="doc.name"/>
+                                </tr>
+                                <tr t-if="doc.ticket_id">
+                                    <td><strong>Demande portail</strong></td>
+                                    <td colspan="3" t-esc="doc.ticket_id.ticket_ref"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Validé par -->
+                        <div class="mt-3 text-muted" style="font-size:0.85em;"
+                             t-if="doc.validated_by">
+                            Validé par : <strong t-esc="doc.validated_by.name"/>
+                        </div>
+
+                        <!-- Signatures -->
+                        <div class="row mt-5" style="margin-top:70px !important;">
+                            <div class="col-4 text-center">
+                                <div style="margin-top:70px;border-top:1px solid #000;padding-top:8px;">
+                                    <strong>L'intéressé(e)</strong><br/>
+                                    <small t-esc="doc.employee_id.name or ''"/>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="margin-top:70px;border-top:1px solid #000;padding-top:8px;">
+                                    <strong>Le responsable hiérarchique</strong><br/>
+                                    <small t-esc="doc.employee_id.parent_id.name or ''"/>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="margin-top:70px;border-top:1px solid #000;padding-top:8px;">
+                                    <strong>La Direction des Ressources Humaines</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- Action de rapport -->
+    <record id="report_leave_certificate" model="ir.actions.report">
+        <field name="name">Titre de Congé</field>
+        <field name="model">hr.leave</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_dz_leave.report_leave_certificate_document</field>
+        <field name="report_file">hr_dz_leave.report_leave_certificate_document</field>
+        <field name="print_report_name">'Titre_Conge_' + (object.employee_id.name or '').replace(' ', '_')</field>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+
+</odoo>

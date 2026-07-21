@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Action rapport : Bon d'engagement de remboursement de prêt
+    ================================================================ -->
+    <record id="action_report_loan_commitment" model="ir.actions.report">
+        <field name="name">Bon d'engagement de remboursement</field>
+        <field name="model">hr.loan</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_dz_loan.report_loan_commitment_document</field>
+        <field name="report_file">hr_dz_loan.report_loan_commitment_document</field>
+        <field name="print_report_name">'Engagement - %s' % object.employee_id.name</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+    </record>
+
+    <!-- ================================================================
+         Template QWeb : Bon d'engagement
+    ================================================================ -->
+    <template id="report_loan_commitment_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="loan">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            .loan-title { text-align: center; margin-bottom: 16px; }
+                            .loan-title h3 { margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 1px; }
+                            .loan-title p  { margin: 0; color: #666; font-size: 11px; }
+                            .loan-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 11px; }
+                            .loan-table th, .loan-table td { border: 1px solid #ccc; padding: 5px 8px; vertical-align: top; }
+                            .loan-table thead th { background: #343a40; color: #fff; text-align: center; font-weight: bold; }
+                            .loan-table .label-col { background: #f5f5f5; font-weight: 600; width: 38%; }
+                            .loan-table tfoot td { background: #f5f5f5; font-weight: bold; }
+                            .engagement-box { border: 1px solid #ccc; padding: 12px 14px; margin-bottom: 14px;
+                                              background: #fafafa; font-size: 11px; text-align: justify; line-height: 1.6; }
+                            .engagement-box h5 { margin: 0 0 8px 0; font-size: 12px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+                            .sign-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+                            .sign-table td { width: 45%; border: 1px solid #ccc; padding: 10px; vertical-align: top; text-align: center; }
+                            .sign-table td.spacer { width: 10%; border: none; }
+                            .sign-zone { height: 60px; border-bottom: 1px solid #999; margin: 10px 0 6px 0; }
+                            .text-right { text-align: right; }
+                            .text-center { text-align: center; }
+                            .fw-bold { font-weight: bold; }
+                            .section-title { font-size: 12px; font-weight: bold; margin: 14px 0 6px 0;
+                                             border-left: 3px solid #343a40; padding-left: 8px; }
+                        </style>
+
+                        <!-- ── Titre ── -->
+                        <div class="loan-title">
+                            <h3>Bon d'engagement de remboursement de prêt salarial</h3>
+                            <p>
+                                Réf. : <strong><t t-esc="loan.name"/></strong>
+                                &#160;|&#160;
+                                Imprimé le : <strong><t t-esc="datetime.date.today().strftime('%d/%m/%Y')"/></strong>
+                            </p>
+                        </div>
+
+                        <!-- ── Employé ── -->
+                        <div class="section-title">Informations sur l'employé</div>
+                        <table class="loan-table">
+                            <tr>
+                                <td class="label-col">Nom et prénom</td>
+                                <td><strong><t t-esc="loan.employee_id.name"/></strong></td>
+                                <td class="label-col">Matricule</td>
+                                <td><t t-esc="loan.employee_id.barcode or '—'"/></td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Poste occupé</td>
+                                <td><t t-esc="loan.employee_id.job_title or loan.employee_id.job_id.name or '—'"/></td>
+                                <td class="label-col">Département</td>
+                                <td><t t-esc="loan.employee_id.department_id.name or '—'"/></td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Date de la demande</td>
+                                <td><t t-esc="loan.date_request.strftime('%d/%m/%Y') if loan.date_request else '—'"/></td>
+                                <td class="label-col">Société</td>
+                                <td><t t-esc="loan.employee_id.company_id.name or '—'"/></td>
+                            </tr>
+                        </table>
+
+                        <!-- ── Détails du prêt ── -->
+                        <div class="section-title">Détails du prêt</div>
+                        <table class="loan-table">
+                            <tr>
+                                <td class="label-col">Montant total accordé</td>
+                                <td class="fw-bold">
+                                    <t t-esc="'{:,.2f}'.format(loan.amount).replace(',', ' ')"/> DA
+                                </td>
+                                <td class="label-col">Nombre de mensualités</td>
+                                <td><t t-esc="loan.nb_months"/> mois</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Mensualité de remboursement</td>
+                                <td class="fw-bold">
+                                    <t t-esc="'{:,.2f}'.format(loan.amount_per_month).replace(',', ' ')"/> DA
+                                </td>
+                                <td class="label-col">Motif</td>
+                                <td><t t-esc="loan.reason or '—'"/></td>
+                            </tr>
+                        </table>
+
+                        <!-- ── Texte d'engagement ── -->
+                        <div class="engagement-box">
+                            <h5>Engagement de l'employé</h5>
+                            Je soussigné(e), <strong><t t-esc="loan.employee_id.name"/></strong>,
+                            employé(e) au sein de <strong><t t-esc="loan.employee_id.company_id.name"/></strong>,
+                            reconnais avoir bénéficié d'un prêt salarial sans intérêts d'un montant de
+                            <strong><t t-esc="'{:,.2f}'.format(loan.amount).replace(',', ' ')"/> DA</strong>
+                            et m'engage formellement à le rembourser selon les modalités suivantes :
+                            <strong><t t-esc="loan.nb_months"/> mensualités</strong> de
+                            <strong><t t-esc="'{:,.2f}'.format(loan.amount_per_month).replace(',', ' ')"/> DA</strong>
+                            retenues directement sur mon bulletin de paie à compter du mois suivant la date d'approbation.
+                            <br/><br/>
+                            En cas de rupture du contrat de travail pour quelque motif que ce soit,
+                            le solde restant dû deviendra immédiatement exigible dans son intégralité.
+                            Je certifie avoir pris connaissance et accepté l'ensemble des conditions du présent engagement.
+                        </div>
+
+                        <!-- ── Échéancier prévisionnel ── -->
+                        <t t-set="preview_lines" t-value="loan.get_commitment_schedule_preview()"/>
+                        <div class="section-title">Échéancier prévisionnel de remboursement</div>
+                        <table class="loan-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:8%">N°</th>
+                                    <th style="width:30%">Mois prévu</th>
+                                    <th style="width:30%" class="text-right">Montant (DA)</th>
+                                    <th style="width:32%">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="preview_lines" t-as="line">
+                                    <tr>
+                                        <td class="text-center"><t t-esc="line['index']"/></td>
+                                        <td class="text-center"><t t-esc="line['date'].strftime('%m/%Y')"/></td>
+                                        <td class="text-right">
+                                            <t t-esc="'{:,.2f}'.format(line['amount']).replace(',', ' ')"/>
+                                        </td>
+                                        <td>En attente</td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" class="text-right fw-bold">Total</td>
+                                    <td class="text-right fw-bold">
+                                        <t t-esc="'{:,.2f}'.format(loan.amount).replace(',', ' ')"/>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <!-- ── Chèque de banque ── -->
+                        <div class="section-title">Chèque de banque (garantie)</div>
+                        <table class="loan-table">
+                            <tr>
+                                <td class="label-col">N° du chèque</td>
+                                <td>
+                                    <t t-if="loan.bank_check_number">
+                                        <t t-esc="loan.bank_check_number"/>
+                                    </t>
+                                    <t t-else="">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;</t>
+                                </td>
+                                <td class="label-col">Banque</td>
+                                <td>&#160;</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Montant du chèque</td>
+                                <td class="fw-bold">
+                                    <t t-esc="'{:,.2f}'.format(loan.amount).replace(',', ' ')"/> DA
+                                </td>
+                                <td class="label-col">Visa / cachet</td>
+                                <td style="height:36px;">&#160;</td>
+                            </tr>
+                        </table>
+
+                        <!-- ── Signatures ── -->
+                        <table class="sign-table">
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">L'EMPLOYÉ</div>
+                                    <div style="font-size:10px; color:#666; margin-bottom:4px;">
+                                        <t t-esc="loan.employee_id.name"/>
+                                    </div>
+                                    <div class="sign-zone"></div>
+                                    <div>Date : _____ / _____ / __________</div>
+                                </td>
+                                <td class="spacer"></td>
+                                <td>
+                                    <div class="fw-bold">LE DIRECTEUR DES RESSOURCES HUMAINES</div>
+                                    <div style="font-size:10px; color:#666; margin-bottom:4px;">&#160;</div>
+                                    <div class="sign-zone"></div>
+                                    <div>Date : _____ / _____ / __________</div>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

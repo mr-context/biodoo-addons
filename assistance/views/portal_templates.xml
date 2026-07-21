@@ -1,0 +1,450 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Portail : accueil — carte dans portal_common_category
+    ================================================================ -->
+    <template id="portal_my_home_assistance"
+              name="Portal My Home: Assistance"
+              inherit_id="portal.portal_my_home"
+              priority="50">
+        <div id="portal_common_category" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="config_card" t-value="True"/>
+                <t t-set="icon" t-value="'/assistance/static/src/img/portal-assistance.svg'"/>
+                <t t-set="title">Mes demandes d'assistance</t>
+                <t t-set="text">Créez et suivez vos demandes</t>
+                <t t-set="url" t-value="'/my/assistance'"/>
+                <t t-set="placeholder_count" t-value="'assistance_count'"/>
+            </t>
+        </div>
+    </template>
+
+    <!-- ================================================================
+         /my/assistance — topics OU liste de tickets (paramètre tab=)
+    ================================================================ -->
+    <template id="portal_my_assistance" name="Mes demandes d'assistance">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Centre d'assistance</t>
+            </t>
+
+            <!-- Navigation topics / mes demandes -->
+            <ul class="nav nav-tabs mt-3 mb-4">
+                <li class="nav-item">
+                    <a t-att-class="'nav-link ' + ('active fw-semibold' if tab == 'topics' else '')"
+                       href="/my/assistance?tab=topics">
+                        <i class="fa fa-th-large me-1"/>
+                        Créer une demande
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a t-att-class="'nav-link ' + ('active fw-semibold' if tab == 'list' else '')"
+                       href="/my/assistance?tab=list">
+                        <i class="fa fa-list me-1"/>
+                        Mes demandes
+                        <t t-if="ticket_count">
+                            <span class="badge bg-secondary ms-1">
+                                <t t-esc="ticket_count"/>
+                            </span>
+                        </t>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- ================================================================
+                 Onglet TOPICS
+            ================================================================ -->
+            <t t-if="tab == 'topics'">
+                <div class="mb-2">
+                    <h5 class="mb-1">Comment pouvons-nous vous aider ?</h5>
+                    <p class="text-muted small mb-4">
+                        Sélectionnez le service concerné pour soumettre une nouvelle demande.
+                    </p>
+                    <div class="row g-3">
+                        <t t-foreach="portal_teams" t-as="team">
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <a t-attf-href="/my/assistance/new?team_id=#{team.id}"
+                                   class="card h-100 text-decoration-none text-reset border">
+                                    <div class="card-body d-flex align-items-start gap-3 p-3">
+                                        <!-- Cercle initiale -->
+                                        <div class="rounded-circle d-flex align-items-center
+                                                    justify-content-center flex-shrink-0 fw-bold"
+                                             style="width:44px;height:44px;font-size:1.15rem;
+                                                    background:#e8edf5;color:#374874;">
+                                            <t t-esc="(team.name or '?')[0].upper()"/>
+                                        </div>
+                                        <div class="flex-grow-1 min-w-0">
+                                            <div class="fw-semibold lh-sm">
+                                                <t t-esc="team.name"/>
+                                            </div>
+                                            <div t-if="team.description"
+                                                 class="text-muted small mt-1">
+                                                <t t-esc="team.description"/>
+                                            </div>
+                                            <div class="text-primary small mt-2">
+                                                Soumettre une demande
+                                                <i class="fa fa-arrow-right ms-1"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </t>
+
+            <!-- ================================================================
+                 Onglet LISTE DE TICKETS
+            ================================================================ -->
+            <t t-if="tab == 'list'">
+
+                <!-- Barre d'outils : filtres + tri + bouton créer -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                    <!-- Filtres -->
+                    <div class="d-flex gap-1">
+                        <t t-foreach="searchbar_filters.items()" t-as="flt">
+                            <a t-attf-href="/my/assistance?tab=list&amp;filterby=#{flt[0]}&amp;sortby=#{sortby}"
+                               t-att-class="'btn btn-sm ' + ('btn-primary' if filterby == flt[0] else 'btn-outline-secondary')">
+                                <t t-esc="flt[1]['label']"/>
+                            </a>
+                        </t>
+                    </div>
+                    <!-- Tri -->
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small">Trier :</span>
+                        <t t-foreach="searchbar_sortings.items()" t-as="srt">
+                            <a t-attf-href="/my/assistance?tab=list&amp;filterby=#{filterby}&amp;sortby=#{srt[0]}"
+                               t-att-class="'btn btn-sm ' + ('btn-secondary' if sortby == srt[0] else 'btn-outline-secondary')">
+                                <t t-esc="srt[1]['label']"/>
+                            </a>
+                        </t>
+                    </div>
+                    <!-- Bouton créer -->
+                    <a href="/my/assistance?tab=topics" class="btn btn-primary btn-sm">
+                        <i class="fa fa-plus me-1"/> Nouvelle demande
+                    </a>
+                </div>
+
+                <!-- Recherche texte -->
+                <form action="/my/assistance" method="get" class="mb-3">
+                    <input type="hidden" name="tab" value="list"/>
+                    <input type="hidden" name="filterby" t-att-value="filterby"/>
+                    <input type="hidden" name="sortby" t-att-value="sortby"/>
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="search" class="form-control"
+                               placeholder="Rechercher par sujet ou référence…"
+                               t-att-value="search"/>
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <i class="fa fa-search"/>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Liste vide -->
+                <t t-if="not tickets">
+                    <div class="alert alert-info" role="alert">
+                        <t t-if="filterby == 'open'">Aucune demande ouverte.</t>
+                        <t t-elif="filterby == 'closed'">Aucune demande résolue.</t>
+                        <t t-else="">Aucune demande d'assistance.</t>
+                        <a href="/my/assistance?tab=topics" class="ms-2">
+                            Créer une demande →
+                        </a>
+                    </div>
+                </t>
+
+                <!-- Tableau -->
+                <t t-if="tickets">
+                    <div class="card">
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0 o_portal_my_doc_table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Réf.</th>
+                                        <th>Sujet</th>
+                                        <th>Équipe</th>
+                                        <th>Étape</th>
+                                        <th class="text-end">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="tickets" t-as="ticket">
+                                        <tr>
+                                            <td>
+                                                <span class="text-muted small">
+                                                    <t t-esc="ticket.ticket_ref"/>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a t-attf-href="/my/assistance/#{ticket.id}">
+                                                    <t t-esc="ticket.name"/>
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <t t-esc="ticket.team_id.name or '—'"/>
+                                            </td>
+                                            <td>
+                                                <span t-att-class="'badge ' + ('bg-success' if ticket.stage_id.is_closed else 'bg-info text-dark')">
+                                                    <t t-esc="ticket.stage_id.name or '—'"/>
+                                                </span>
+                                            </td>
+                                            <td class="text-end text-muted small">
+                                                <span t-field="ticket.create_date"
+                                                      t-options='{"format": "dd/MM/yyyy"}'/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Paginateur -->
+                    <div t-if="pager" class="o_portal_pager text-center mt-3">
+                        <t t-call="portal.pager"/>
+                    </div>
+                </t>
+
+            </t>
+
+        </t>
+    </template>
+
+    <!-- ================================================================
+         /my/assistance/new — formulaire création
+    ================================================================ -->
+    <template id="portal_assistance_new" name="Nouvelle demande d'assistance">
+        <t t-call="portal.portal_layout">
+            <div class="row justify-content-center mt-4">
+                <div class="col-12 col-md-8">
+
+                    <!-- Titre dynamique selon l'équipe pré-sélectionnée -->
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <a href="/my/assistance" class="text-muted" title="Retour">
+                            <i class="fa fa-arrow-left"/>
+                        </a>
+                        <h3 class="mb-0">
+                            <t t-if="preselected_team">
+                                Nouvelle demande —
+                                <span class="text-primary">
+                                    <t t-esc="preselected_team.name"/>
+                                </span>
+                            </t>
+                            <t t-else="">Nouvelle demande d'assistance</t>
+                        </h3>
+                    </div>
+
+                    <!-- Messages d'erreur -->
+                    <div t-if="error == 'subject'" class="alert alert-danger" role="alert">
+                        <i class="fa fa-exclamation-circle me-1"/> Le sujet est obligatoire.
+                    </div>
+                    <div t-if="error == 'server'" class="alert alert-danger" role="alert">
+                        <i class="fa fa-exclamation-circle me-1"/>
+                        Une erreur s'est produite. Veuillez réessayer ou contacter l'administrateur.
+                    </div>
+
+                    <form action="/my/assistance/new" method="post"
+                          class="o_portal_details">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                        <!-- Équipe : pré-sélectionnée (champ caché) ou dropdown -->
+                        <t t-if="preselected_team">
+                            <input type="hidden" name="team_id"
+                                   t-att-value="preselected_team.id"/>
+                            <div class="mb-3 d-flex align-items-center gap-2">
+                                <div class="rounded-circle d-flex align-items-center
+                                            justify-content-center fw-bold flex-shrink-0"
+                                     style="width:36px;height:36px;font-size:1rem;
+                                            background:#e8edf5;color:#374874;">
+                                    <t t-esc="(preselected_team.name or '?')[0].upper()"/>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold">
+                                        <t t-esc="preselected_team.name"/>
+                                    </div>
+                                    <t t-if="preselected_team.description">
+                                        <div class="text-muted small">
+                                            <t t-esc="preselected_team.description"/>
+                                        </div>
+                                    </t>
+                                </div>
+                                <a href="/my/assistance" class="btn btn-sm btn-outline-secondary ms-auto">
+                                    Changer
+                                </a>
+                            </div>
+                            <hr class="mb-3"/>
+                        </t>
+                        <t t-elif="teams">
+                            <div class="mb-3">
+                                <label for="team_id" class="form-label fw-semibold">
+                                    Service concerné <span class="text-danger">*</span>
+                                </label>
+                                <select name="team_id" id="team_id" class="form-select">
+                                    <t t-foreach="teams" t-as="team">
+                                        <option t-att-value="team.id">
+                                            <t t-esc="team.name"/>
+                                            <t t-if="team.description"> — <t t-esc="team.description"/></t>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <div class="alert alert-warning" role="alert">
+                                Aucun service n'est actuellement disponible pour les demandes en ligne.
+                                Veuillez contacter votre administrateur.
+                            </div>
+                        </t>
+
+                        <!-- Sujet -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-semibold">
+                                Sujet <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="name" id="name"
+                                   class="form-control"
+                                   t-att-value="form_data.get('name', '')"
+                                   placeholder="Décrivez brièvement votre demande"
+                                   required="required"
+                                   autofocus="autofocus"/>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-semibold">
+                                Description
+                            </label>
+                            <textarea name="description" id="description"
+                                      class="form-control" rows="6"
+                                      placeholder="Donnez tous les détails utiles…"><t t-esc="form_data.get('description', '')"/></textarea>
+                        </div>
+
+                        <!-- Boutons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-paper-plane me-1"/> Envoyer
+                            </button>
+                            <a href="/my/assistance" class="btn btn-outline-secondary">
+                                ← Choisir un autre service
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ================================================================
+         /my/assistance/<id> — détail ticket
+    ================================================================ -->
+    <template id="portal_assistance_detail" name="Détail de la demande d'assistance">
+        <t t-call="portal.portal_layout">
+
+            <!-- Notification création -->
+            <div t-if="ticket_new" class="alert alert-success mt-3" role="alert">
+                <i class="fa fa-check-circle me-1"/>
+                <strong>Demande envoyée !</strong>
+                Votre demande <strong><t t-esc="ticket.ticket_ref"/></strong> a bien été enregistrée.
+                Notre équipe vous répondra dans les meilleurs délais.
+            </div>
+
+            <!-- Notification fermeture -->
+            <div t-if="ticket_closed" class="alert alert-success mt-3" role="alert">
+                <i class="fa fa-check-circle me-1"/>
+                Votre demande a bien été clôturée. Merci !
+            </div>
+
+            <!-- En-tête -->
+            <div class="row mt-3 mb-3">
+                <div class="col-12 col-md-8">
+                    <h3 class="mb-1">
+                        <t t-esc="ticket.name"/>
+                    </h3>
+                    <small class="text-muted">
+                        Réf. <strong><t t-esc="ticket.ticket_ref"/></strong>
+                        — créée le
+                        <span t-field="ticket.create_date"
+                              t-options='{"format": "dd/MM/yyyy"}'/>
+                    </small>
+                </div>
+                <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0 d-flex flex-wrap gap-2 justify-content-md-end align-items-start">
+                    <!-- Badge étape -->
+                    <span t-att-class="'badge fs-6 ' + ('bg-success' if ticket.stage_id.is_closed else 'bg-primary')">
+                        <t t-esc="ticket.stage_id.name or 'Nouveau'"/>
+                    </span>
+                    <!-- Bouton fermeture -->
+                    <a t-if="not ticket.close_date"
+                       t-attf-href="/my/assistance/#{ticket.id}/close"
+                       class="btn btn-sm btn-outline-danger"
+                       onclick="return confirm('Confirmer la clôture de cette demande ?');">
+                        <i class="fa fa-times me-1"/> Fermer ma demande
+                    </a>
+                </div>
+            </div>
+
+            <!-- Fiche infos -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6 col-md-3">
+                            <div class="text-muted small">Équipe</div>
+                            <div class="fw-semibold">
+                                <t t-esc="ticket.team_id.name or '—'"/>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="text-muted small">Assigné à</div>
+                            <div class="fw-semibold">
+                                <t t-esc="ticket.user_id.name or 'Non assigné'"/>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="text-muted small">Priorité</div>
+                            <div>
+                                <span t-att-class="'badge ' + ('bg-danger' if ticket.priority == '1' else 'bg-secondary')">
+                                    <t t-esc="'Urgent' if ticket.priority == '1' else 'Normal'"/>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3" t-if="ticket.close_date">
+                            <div class="text-muted small">Clôturée le</div>
+                            <div class="fw-semibold">
+                                <span t-field="ticket.close_date"
+                                      t-options='{"format": "dd/MM/yyyy HH:mm"}'/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div t-if="ticket.description" class="card mb-4">
+                <div class="card-header fw-semibold">Description</div>
+                <div class="card-body">
+                    <div t-field="ticket.description" class="o_portal_html_view"/>
+                </div>
+            </div>
+
+            <!-- Chatter portail -->
+            <div class="mt-4">
+                <h5 class="mb-3">Messages</h5>
+                <t t-call="portal.message_thread">
+                    <t t-set="object" t-value="ticket"/>
+                    <t t-set="token" t-value="ticket.access_token"/>
+                </t>
+            </div>
+
+            <!-- Retour -->
+            <div class="mt-4">
+                <a href="/my/assistance?tab=list" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa fa-arrow-left me-1"/> Retour à mes demandes
+                </a>
+            </div>
+
+        </t>
+    </template>
+
+</odoo>

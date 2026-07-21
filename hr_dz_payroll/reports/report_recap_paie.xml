@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_recap_paie_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <div class="page">
+                        <t t-set="lines" t-value="doc.get_report_data()"/>
+
+                        <div style="margin-bottom:12px;">
+                            <h4 style="margin:0;" t-field="doc.env.company.name"/>
+                        </div>
+
+                        <h3 style="text-align:center; text-transform:uppercase;">
+                            Récapitulatif de Paie —
+                            <t t-out="dict(doc._fields['month'].selection)[doc.month]"/>
+                            <t t-out="doc.year"/>
+                        </h3>
+
+                        <table style="width:100%; border-collapse:collapse; font-size:11px; margin-top:16px;">
+                            <thead>
+                                <tr style="background-color:#f0f0f0;">
+                                    <th style="border:1px solid #999; padding:5px;">#</th>
+                                    <th style="border:1px solid #999; padding:5px;">Matricule</th>
+                                    <th style="border:1px solid #999; padding:5px;">Collaborateur</th>
+                                    <th style="border:1px solid #999; padding:5px; text-align:right;">Salaire de poste (DA)</th>
+                                    <th style="border:1px solid #999; padding:5px; text-align:right;">Base imposable (DA)</th>
+                                    <th style="border:1px solid #999; padding:5px; text-align:right;">Net perçu (DA)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="lines" t-as="line">
+                                    <tr>
+                                        <td style="border:1px solid #ccc; padding:4px; text-align:center;"><t t-out="line_index + 1"/></td>
+                                        <td style="border:1px solid #ccc; padding:4px;"><t t-out="line['matricule']"/></td>
+                                        <td style="border:1px solid #ccc; padding:4px;"><t t-out="line['employee']"/></td>
+                                        <td style="border:1px solid #ccc; padding:4px; text-align:right;"><t t-out="'{:,.2f}'.format(line['brut'])"/></td>
+                                        <td style="border:1px solid #ccc; padding:4px; text-align:right;"><t t-out="'{:,.2f}'.format(line['imposable'])"/></td>
+                                        <td style="border:1px solid #ccc; padding:4px; text-align:right;"><t t-out="'{:,.2f}'.format(line['net'])"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                            <tfoot>
+                                <tr style="background-color:#f0f0f0; font-weight:bold;">
+                                    <td colspan="3" style="border:1px solid #999; padding:5px; text-align:center;">
+                                        TOTAL — <t t-out="len(lines)"/> collaborateur(s)
+                                    </td>
+                                    <td style="border:1px solid #999; padding:5px; text-align:right;"><t t-out="'{:,.2f}'.format(sum(l['brut'] for l in lines))"/></td>
+                                    <td style="border:1px solid #999; padding:5px; text-align:right;"><t t-out="'{:,.2f}'.format(sum(l['imposable'] for l in lines))"/></td>
+                                    <td style="border:1px solid #999; padding:5px; text-align:right;"><t t-out="'{:,.2f}'.format(sum(l['net'] for l in lines))"/></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <div style="margin-top:40px; font-size:10px; color:#666;">
+                            Document généré le
+                            <t t-out="context_timestamp(datetime.datetime.now()).strftime('%d/%m/%Y à %H:%M')"/>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

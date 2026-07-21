@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_ocr_wizard_view_form" model="ir.ui.view">
+        <field name="name">hr.ocr.wizard.form</field>
+        <field name="model">hr.ocr.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Scanner un Document OCR">
+
+                <!-- ═══════════════════════════════════════════════════
+                     ÉTAT : UPLOAD
+                ════════════════════════════════════════════════════ -->
+                <div invisible="state != 'upload'" class="p-3">
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="fa fa-user-circle fa-lg text-muted" title="Employé"/>
+                                <strong><field name="employee_id" readonly="1" nolabel="1"/></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- Type de document -->
+                        <div class="col-md-5">
+                            <div class="fw-bold mb-1">Type de document</div>
+                            <field name="document_type" nolabel="1" class="w-100"/>
+                            <!-- Descriptions par type -->
+                            <small class="text-muted" invisible="document_type != 'auto'">
+                                <i class="fa fa-magic me-1" title="Détection automatique"/>Le système détecte automatiquement le type
+                            </small>
+                            <small class="text-muted" invisible="document_type != 'birth_certificate'">
+                                <i class="fa fa-file-text-o me-1" title="Acte de naissance"/>Extrait : nom arabe, filiation, N° acte, date/lieu de naissance
+                            </small>
+                            <small class="text-muted" invisible="document_type != 'passport'">
+                                <i class="fa fa-id-card-o me-1" title="Passeport"/>Extrait via MRZ : nom, date de naissance, nationalité, expiration
+                            </small>
+                            <small class="text-muted" invisible="document_type != 'id_card'">
+                                <i class="fa fa-credit-card me-1" title="Carte d'identité"/>Scanner le <strong>recto</strong> (face avec la photo et le code MRZ)
+                            </small>
+                            <small class="text-muted" invisible="document_type != 'driver_license'">
+                                <i class="fa fa-car me-1" title="Permis de conduire"/>Extrait via MRZ TD1 : nom, date de naissance, N° permis
+                            </small>
+                        </div>
+
+                        <!-- Fichier -->
+                        <div class="col-md-7">
+                            <div class="fw-bold mb-1">Document (PDF ou image)</div>
+                            <field name="document_file" nolabel="1" widget="binary"
+                                   filename="document_filename" class="w-100"/>
+                            <field name="document_filename" invisible="1"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════
+                     ÉTAT : PROCESSING
+                ════════════════════════════════════════════════════ -->
+                <div invisible="state != 'processing'" class="py-4 text-center">
+                    <i class="fa fa-cog fa-spin fa-2x text-primary mb-3" title="Traitement en cours"/>
+                    <h5 class="mb-3">Analyse en cours…</h5>
+                    <widget name="ocr_progress_terminal"/>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════
+                     ÉTAT : ERREUR
+                ════════════════════════════════════════════════════ -->
+                <div invisible="state != 'error'" class="p-3">
+                    <div class="alert alert-danger" role="alert">
+                        <h5>
+                            <i class="fa fa-exclamation-triangle me-2" title="Erreur"/>
+                            Erreur lors de l'analyse
+                        </h5>
+                        <field name="validation_errors" readonly="1" nolabel="1" widget="text"/>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════
+                     ÉTAT : PREVIEW
+                ════════════════════════════════════════════════════ -->
+                <div invisible="state != 'preview'" class="p-2">
+
+                    <!-- En-tête : statut + type détecté -->
+                    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                        <span class="badge bg-success" invisible="validation_errors">
+                            <i class="fa fa-check me-1" title="Succès"/>Extraction réussie
+                        </span>
+                        <span class="badge bg-warning text-dark" invisible="not validation_errors">
+                            <i class="fa fa-warning me-1" title="Partiel"/>Extraction partielle
+                        </span>
+                        <span class="badge bg-primary" invisible="document_type not in ('birth_certificate',)">
+                            <i class="fa fa-file-text-o me-1" title="Acte"/>Acte de Naissance
+                        </span>
+                        <span class="badge bg-info" invisible="document_type != 'passport'">
+                            <i class="fa fa-id-card-o me-1" title="Passeport"/>Passeport
+                        </span>
+                        <span class="badge bg-info" invisible="document_type != 'id_card'">
+                            <i class="fa fa-credit-card me-1" title="CIN"/>Carte d'Identité
+                        </span>
+                        <span class="badge bg-info" invisible="document_type != 'driver_license'">
+                            <i class="fa fa-car me-1" title="Permis"/>Permis de Conduire
+                        </span>
+                        <span class="badge bg-secondary" invisible="not is_auto_detected">
+                            <i class="fa fa-magic me-1" title="Auto"/>Détecté automatiquement
+                        </span>
+                        <span class="badge bg-success" invisible="doc_side != 'recto'">
+                            <i class="fa fa-check-circle me-1" title="Recto"/>Recto
+                        </span>
+                        <span class="badge bg-danger" invisible="doc_side != 'verso'">
+                            <i class="fa fa-times-circle me-1" title="Verso"/>Verso
+                        </span>
+                    </div>
+
+                    <!-- Alerte erreur partielle -->
+                    <div class="alert alert-warning mb-3" role="alert"
+                         invisible="not validation_errors">
+                        <i class="fa fa-warning me-2" title="Attention"/>
+                        <field name="validation_errors" readonly="1" nolabel="1"/>
+                    </div>
+
+                    <!-- Alerte verso : MRZ absente -->
+                    <div class="alert alert-danger mb-3" role="alert"
+                         invisible="doc_side != 'verso'">
+                        <h6>
+                            <i class="fa fa-rotate-right me-2" title="Verso"/>
+                            Mauvaise face scannée
+                        </h6>
+                        Les données MRZ sont introuvables sur cette image.<br/>
+                        Veuillez scanner le <strong>recto</strong> du document
+                        (la face qui contient la photo et la zone de codes en bas).
+                    </div>
+
+                    <!-- ── Acte de naissance ──────────────────────────── -->
+                    <div invisible="document_type != 'birth_certificate'">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100">
+                                    <h6 class="text-muted border-bottom pb-1 mb-2">
+                                        <i class="fa fa-user me-1" title="Identité"/>Identité
+                                    </h6>
+                                    <div class="mb-2">
+                                        <div class="small text-muted">Nom (Français)</div>
+                                        <field name="extracted_name_fr" nolabel="1" class="w-100"/>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="small text-muted">الاسم بالعربية</div>
+                                        <field name="extracted_name_ar" nolabel="1" class="w-100"/>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="small text-muted">Date de naissance</div>
+                                        <field name="extracted_birth_date" nolabel="1" class="w-100"/>
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted">Lieu de naissance</div>
+                                        <field name="extracted_birth_place" nolabel="1" class="w-100"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100">
+                                    <h6 class="text-muted border-bottom pb-1 mb-2">
+                                        <i class="fa fa-file-text-o me-1" title="Acte"/>Acte &amp; Filiation
+                                    </h6>
+                                    <div class="mb-2">
+                                        <div class="small text-muted">N° Acte de naissance</div>
+                                        <field name="extracted_act_number" nolabel="1" class="w-100"/>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="small text-muted">Prénom du père</div>
+                                        <field name="extracted_father_name" nolabel="1" class="w-100"/>
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted">Nom et prénom de la mère</div>
+                                        <field name="extracted_mother_name" nolabel="1" class="w-100"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── MRZ (passeport / CIN / permis) ────────────── -->
+                    <div invisible="document_type == 'birth_certificate'">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100">
+                                    <h6 class="text-muted border-bottom pb-1 mb-2">
+                                        <i class="fa fa-user me-1" title="Identité"/>Identité
+                                    </h6>
+                                    <div class="mb-2">
+                                        <div class="small text-muted">Nom complet</div>
+                                        <field name="extracted_name_fr" nolabel="1" class="w-100"/>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="small text-muted">Date de naissance</div>
+                                        <field name="extracted_birth_date" nolabel="1" class="w-100"/>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="small text-muted">Genre</div>
+                                        <field name="extracted_gender" nolabel="1" class="w-100"/>
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted">Nationalité (code)</div>
+                                        <field name="extracted_nationality" nolabel="1" class="w-100"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100">
+                                    <h6 class="text-muted border-bottom pb-1 mb-2">
+                                        <i class="fa fa-id-card-o me-1" title="Document"/>Document
+                                    </h6>
+                                    <div class="mb-2">
+                                        <div class="small text-muted">N° Document</div>
+                                        <field name="extracted_document_number" nolabel="1" class="w-100"/>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="small text-muted">Date d'expiration</div>
+                                        <field name="extracted_expiry_date" nolabel="1" class="w-100"/>
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted">Zone MRZ</div>
+                                        <field name="extracted_mrz_text" nolabel="1"
+                                               widget="text" readonly="1"
+                                               class="w-100 font-monospace small"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <field name="doc_side" invisible="1"/>
+                    <field name="is_auto_detected" invisible="1"/>
+
+                </div>
+
+                <field name="state" invisible="1"/>
+                <field name="document_type" invisible="1"/>
+
+                <!-- ── Footer ──────────────────────────────────────── -->
+                <footer>
+                    <button name="action_analyze" type="object"
+                            string="Analyser" class="btn-primary"
+                            invisible="state != 'upload'"/>
+                    <button string="Annuler" class="btn-secondary" special="cancel"
+                            invisible="state != 'upload'"/>
+
+                    <span invisible="state != 'processing'" class="text-muted small">
+                        <i class="fa fa-spinner fa-spin me-1" title="Chargement"/>Veuillez patienter…
+                    </span>
+
+                    <button name="action_back" type="object"
+                            string="Retour" class="btn-secondary"
+                            invisible="state != 'error'"/>
+                    <button string="Fermer" class="btn-secondary" special="cancel"
+                            invisible="state != 'error'"/>
+
+                    <button name="action_back" type="object"
+                            string="Retour" class="btn-secondary"
+                            invisible="state != 'preview'"/>
+                    <button name="action_validate" type="object"
+                            string="Appliquer à l'employé" class="btn-primary"
+                            invisible="state != 'preview' or doc_side == 'verso'"/>
+                    <button string="Fermer" class="btn-secondary" special="cancel"
+                            invisible="state != 'preview'"/>
+                </footer>
+
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_ocr_wizard" model="ir.actions.act_window">
+        <field name="name">Scanner un Document OCR</field>
+        <field name="res_model">hr.ocr.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

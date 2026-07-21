@@ -1,0 +1,633 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         0. Carte home portail — historique des sanctions
+         Visible uniquement quand l'employé a ≥ 1 sanction (actif ou terminé).
+         Cachée si count = 0 → pas de stigmatisation pour les autres employés.
+         Alimentée par _prepare_home_portal_values (int JSON-safe).
+    ================================================================ -->
+    <template id="portal_my_home_sanction_card"
+              name="Portal My Home : Dossier disciplinaire"
+              inherit_id="portal.portal_my_home"
+              priority="44">
+        <div id="portal_common_category" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/hr_dz_sanction/static/src/img/portal-sanction.svg'"/>
+                <t t-set="title">Mon dossier disciplinaire</t>
+                <t t-set="text">Consultez vos procédures et téléchargez vos documents</t>
+                <t t-set="url" t-value="'/my/sanctions'"/>
+                <t t-set="placeholder_count" t-value="'sanction_count'"/>
+            </t>
+        </div>
+    </template>
+
+    <!-- ================================================================
+         1. Cloche de notification dans le header du portail
+         Injectée dans #top_menu (navbar) — visible sur TOUTES les pages.
+         Alimentée par _prepare_portal_layout_values().
+    ================================================================ -->
+    <template id="portal_sanction_bell"
+              name="Portail : cloche notifications RH"
+              inherit_id="portal.frontend_layout"
+              priority="45">
+        <ul id="top_menu" position="inside">
+            <!-- Visible seulement si l'employé a des procédures actives -->
+            <t t-if="sanction_portal_notifications">
+                <li class="nav-item dropdown">
+                    <a href="#"
+                       class="nav-link px-2 py-1 position-relative"
+                       data-bs-toggle="dropdown"
+                       aria-expanded="false"
+                       aria-label="Notifications RH"
+                       title="Notifications RH">
+                        <!-- Cloche -->
+                        <i class="fa fa-bell fa-fw"/>
+                        <!-- Badge rouge non lus -->
+                        <t t-if="sanction_unread_count">
+                            <span class="position-absolute badge rounded-pill bg-danger"
+                                  style="top:2px;left:18px;font-size:.6rem;padding:.25em .45em;min-width:16px;line-height:1;">
+                                <t t-esc="sanction_unread_count"/>
+                            </span>
+                        </t>
+                    </a>
+
+                    <!-- Dropdown -->
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm p-0"
+                        style="min-width:300px;max-width:360px;">
+
+                        <!-- En-tête dropdown -->
+                        <li class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between"
+                            style="background:#f8f9fa;">
+                            <span class="fw-semibold small">
+                                <i class="fa fa-bell me-1 text-muted"/>
+                                Notifications RH
+                            </span>
+                            <t t-if="sanction_unread_count">
+                                <span class="badge bg-danger" style="font-size:.65rem;">
+                                    <t t-esc="sanction_unread_count"/> non lue(s)
+                                </span>
+                            </t>
+                        </li>
+
+                        <!-- Liste des notifications -->
+                        <t t-foreach="sanction_portal_notifications" t-as="notif">
+                            <li>
+                                <a t-attf-href="/my/sanctions/#{notif.id}"
+                                   t-att-class="'dropdown-item py-2 px-3' + (
+                                       '' if notif.portal_read else ' bg-light'
+                                   )">
+                                    <div class="d-flex gap-2 align-items-start">
+                                        <!-- Icône état -->
+                                        <i t-att-class="'fa fa-fw mt-1 flex-shrink-0 ' + (
+                                            'fa-envelope-open text-warning' if notif.state == 'convoque' else
+                                            'fa-comments text-info'         if notif.state == 'audition' else
+                                            'fa-gavel text-primary'
+                                        )"/>
+                                        <div class="flex-grow-1 lh-sm" style="min-width:0">
+                                            <div class="d-flex justify-content-between align-items-center gap-1">
+                                                <small class="fw-semibold text-truncate">
+                                                    <t t-esc="
+                                                        'Convocation à audition'  if notif.state == 'convoque' else
+                                                        'Audition en cours'       if notif.state == 'audition' else
+                                                        'Décision rendue'         if notif.state == 'decide'   else
+                                                        'Décision notifiée'
+                                                    "/>
+                                                </small>
+                                                <span t-if="not notif.portal_read"
+                                                      class="badge bg-danger flex-shrink-0"
+                                                      style="font-size:.55rem;">
+                                                    NOUVEAU
+                                                </span>
+                                            </div>
+                                            <small class="text-muted d-block text-truncate"
+                                                   style="font-size:.75rem;">
+                                                <t t-esc="notif.fault_id.name"/>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                        </t>
+
+                        <!-- Lien historique complet -->
+                        <li class="border-top">
+                            <a href="/my/sanctions"
+                               class="dropdown-item text-center small py-2 text-primary">
+                                Voir tout l'historique →
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </t>
+        </ul>
+    </template>
+
+    <!-- ================================================================
+         2. Bannière home portail — avec badge NOUVEAU
+         Injectée avant portal_common_category sur la page /my.
+    ================================================================ -->
+    <template id="portal_my_home_sanction_notifications"
+              name="Portal My Home : Notifications sanctions"
+              inherit_id="portal.portal_my_home"
+              priority="45">
+
+        <xpath expr="//div[@id='portal_common_category']" position="before">
+            <t t-if="sanction_portal_notifications">
+                <div class="mb-4">
+                    <t t-foreach="sanction_portal_notifications" t-as="notif">
+
+                        <t t-set="notif_class" t-value="
+                            'alert-warning' if notif.state in ('convoque', 'audition') else
+                            'alert-info'
+                        "/>
+                        <t t-set="notif_icon" t-value="
+                            'fa-envelope-open text-warning' if notif.state == 'convoque' else
+                            'fa-comments text-info'         if notif.state == 'audition' else
+                            'fa-gavel text-primary'
+                        "/>
+                        <t t-set="notif_label" t-value="
+                            'Vous avez été convoqué(e) à une audition disciplinaire'
+                                if notif.state == 'convoque' else
+                            'Votre audition disciplinaire est en cours — vous pouvez soumettre votre réponse'
+                                if notif.state == 'audition' else
+                            'Une décision disciplinaire a été rendue en votre encontre'
+                                if notif.state == 'decide' else
+                            'La décision disciplinaire vous a été notifiée'
+                        "/>
+
+                        <div t-att-class="'alert d-flex align-items-start gap-3 border-start border-4 mb-2 ' + notif_class"
+                             role="alert">
+                            <!-- Icône -->
+                            <div class="pt-1 flex-shrink-0">
+                                <i t-att-class="'fa fa-lg ' + notif_icon"/>
+                            </div>
+
+                            <!-- Contenu -->
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="fw-semibold">
+                                        <t t-esc="notif_label"/>
+                                    </span>
+                                    <!-- Badge NOUVEAU si non lu -->
+                                    <t t-if="not notif.portal_read">
+                                        <span class="badge bg-danger"
+                                              style="font-size:.65rem;vertical-align:middle;">
+                                            NOUVEAU
+                                        </span>
+                                    </t>
+                                </div>
+                                <div class="small mt-1 text-muted">
+                                    Faute :
+                                    <strong><t t-esc="notif.fault_id.name"/></strong>
+                                    — constatée le
+                                    <span t-field="notif.date_incident"
+                                          t-options='{"format": "dd/MM/yyyy"}'/>
+                                    <t t-if="notif.state == 'convoque' and notif.audition_date_planned">
+                                        — audition prévue le
+                                        <span t-field="notif.audition_date_planned"
+                                              t-options='{"format": "dd/MM/yyyy"}'/>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <!-- Bouton -->
+                            <a t-attf-href="/my/sanctions/#{notif.id}"
+                               t-att-class="'btn btn-sm flex-shrink-0 ' + (
+                                   'btn-warning' if notif.state in ('convoque', 'audition') else
+                                   'btn-primary'
+                               )">
+                                <t t-if="notif.state == 'audition'">
+                                    <i class="fa fa-pencil me-1"/>
+                                    Soumettre ma réponse
+                                </t>
+                                <t t-else="">
+                                    Consulter →
+                                </t>
+                            </a>
+                        </div>
+
+                    </t>
+                </div>
+            </t>
+        </xpath>
+
+    </template>
+
+
+    <!-- ================================================================
+         /my/sanctions — Liste des procédures
+    ================================================================ -->
+    <template id="portal_my_sanctions" name="Mes procédures disciplinaires">
+        <t t-call="portal.portal_layout">
+
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Mes procédures disciplinaires</t>
+            </t>
+
+            <t t-if="not sanctions">
+                <div class="alert alert-info mt-3" role="alert">
+                    <i class="fa fa-check-circle me-2"/>
+                    Aucune procédure disciplinaire en cours.
+                </div>
+            </t>
+
+            <t t-if="sanctions">
+                <div class="card mt-3">
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Référence</th>
+                                    <th>Date incident</th>
+                                    <th>Faute</th>
+                                    <th>Degré</th>
+                                    <th>Sanction</th>
+                                    <th>État</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="sanctions" t-as="s">
+                                    <tr>
+                                        <td>
+                                            <a t-attf-href="/my/sanctions/#{s.id}"
+                                               class="fw-semibold text-decoration-none">
+                                                <t t-esc="s.name"/>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span t-field="s.date_incident"/>
+                                        </td>
+                                        <td>
+                                            <t t-esc="s.fault_id.name"/>
+                                        </td>
+                                        <td>
+                                            <span t-att-class="'badge ' + {
+                                                '1': 'bg-warning text-dark',
+                                                '2': 'bg-orange text-dark',
+                                                '3': 'bg-danger',
+                                                '4': 'bg-dark',
+                                            }.get(s.degree or '', 'bg-secondary')">
+                                                <t t-esc="{
+                                                    '1': '1er degré',
+                                                    '2': '2ème degré',
+                                                    '3': '3ème degré',
+                                                    '4': '4ème degré',
+                                                }.get(s.degree or '', '?')"/>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <t t-esc="s.sanction_type_id.name if s.sanction_type_id else '—'"/>
+                                        </td>
+                                        <td>
+                                            <span t-att-class="'badge ' + state_badge.get(s.state, 'bg-secondary')">
+                                                <t t-esc="state_labels.get(s.state, s.state)"/>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </t>
+
+        </t>
+    </template>
+
+
+    <!-- ================================================================
+         /my/sanctions/<id> — Détail
+    ================================================================ -->
+    <template id="portal_sanction_detail" name="Détail procédure disciplinaire">
+        <t t-call="portal.portal_layout">
+
+            <!-- Breadcrumb -->
+            <t t-set="o_portal_fullwidth_alert" t-value="False"/>
+
+            <div class="row justify-content-center mt-3">
+                <div class="col-12 col-lg-10">
+
+                    <!-- En-tête -->
+                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="/my/sanctions" class="text-muted" title="Retour">
+                                <i class="fa fa-arrow-left"/>
+                            </a>
+                            <h4 class="mb-0">
+                                Procédure disciplinaire
+                                <span class="text-muted ms-1 fs-6">
+                                    <t t-esc="sanction.name"/>
+                                </span>
+                            </h4>
+                        </div>
+                        <span t-att-class="'badge fs-6 ' + state_badge.get(sanction.state, 'bg-secondary')">
+                            <t t-esc="state_labels.get(sanction.state, sanction.state)"/>
+                        </span>
+                    </div>
+
+                    <!-- ════ Progress indicator ════ -->
+                    <t t-if="sanction.state != 'cancel'">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+
+                                    <t t-set="step_labels" t-value="[
+                                        'Nouveau',
+                                        'Convoqué',
+                                        'Audition',
+                                        'Décision',
+                                        'Notifié',
+                                        'Terminé',
+                                    ]"/>
+
+                                    <t t-foreach="steps" t-as="step">
+                                        <t t-set="step_idx" t-value="step_index"/>
+                                        <t t-set="is_done"    t-value="step_idx &lt; current_step"/>
+                                        <t t-set="is_current" t-value="step_idx == current_step"/>
+
+                                        <!-- Bulle -->
+                                        <div class="text-center flex-shrink-0" style="width:60px;">
+                                            <div t-att-class="'rounded-circle mx-auto d-flex align-items-center justify-content-center ' + (
+                                                'bg-success text-white' if is_done else
+                                                'bg-primary text-white' if is_current else
+                                                'bg-light text-muted border'
+                                            )" style="width:36px;height:36px;font-size:.85rem;">
+                                                <i class="fa fa-check" t-if="is_done"/>
+                                                <span t-elif="is_current">
+                                                    <t t-esc="step_idx + 1"/>
+                                                </span>
+                                                <span t-else="">
+                                                    <t t-esc="step_idx + 1"/>
+                                                </span>
+                                            </div>
+                                            <div class="small mt-1" t-att-class="'fw-semibold' if is_current else 'text-muted'">
+                                                <t t-esc="step_labels[step_idx]"/>
+                                            </div>
+                                        </div>
+
+                                        <!-- Barre de connexion (sauf après la dernière bulle) -->
+                                        <t t-if="not step_last">
+                                            <div style="flex:1;height:3px;"
+                                                 t-att-class="'rounded ' + (
+                                                     'bg-success' if step_idx &lt; current_step - 1 else
+                                                     'bg-primary' if step_idx == current_step - 1 else
+                                                     'bg-light border'
+                                                 )"/>
+                                        </t>
+                                    </t>
+
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+
+                    <!-- Alerte annulation -->
+                    <t t-if="sanction.state == 'cancel'">
+                        <div class="alert alert-danger mb-4" role="alert">
+                            <i class="fa fa-times-circle me-2"/>
+                            Cette procédure a été annulée.
+                        </div>
+                    </t>
+
+                    <!-- ════ Alerte réponse envoyée ════ -->
+                    <t t-if="response_sent">
+                        <div class="alert alert-success mb-4" role="alert">
+                            <i class="fa fa-check-circle me-2"/>
+                            <strong>Votre réponse a été transmise au service RH.</strong>
+                            Elle est maintenant visible dans le dossier.
+                        </div>
+                    </t>
+
+                    <!-- ════ Carte : Incident ════ -->
+                    <div class="card mb-4">
+                        <div class="card-header fw-semibold">
+                            <i class="fa fa-exclamation-triangle me-2 text-warning"/>
+                            Incident
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <div class="text-muted small">Type de faute</div>
+                                    <div class="fw-semibold">
+                                        <t t-esc="sanction.fault_id.name"/>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3">
+                                    <div class="text-muted small">Degré</div>
+                                    <div>
+                                        <span t-att-class="'badge ' + {
+                                            '1': 'bg-warning text-dark',
+                                            '2': 'bg-warning text-dark',
+                                            '3': 'bg-danger',
+                                            '4': 'bg-dark',
+                                        }.get(sanction.degree or '', 'bg-secondary')">
+                                            <t t-esc="{
+                                                '1': '1er degré',
+                                                '2': '2ème degré',
+                                                '3': '3ème degré',
+                                                '4': '4ème degré',
+                                            }.get(sanction.degree or '', '?')"/>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3">
+                                    <div class="text-muted small">Date</div>
+                                    <div>
+                                        <span t-field="sanction.date_incident"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ════ Carte : Convocation ════ -->
+                    <t t-if="sanction.state not in ('draft',)">
+                        <div class="card mb-4">
+                            <div class="card-header fw-semibold">
+                                <i class="fa fa-envelope me-2 text-info"/>
+                                Convocation à audition
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Date de convocation</div>
+                                        <div>
+                                            <span t-field="sanction.date_convocation"/>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Date d'audition prévue</div>
+                                        <div>
+                                            <span t-field="sanction.audition_date_planned"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <t t-if="sanction.convocation_note">
+                                    <div class="text-muted small">Objet</div>
+                                    <div t-out="sanction.convocation_note"/>
+                                </t>
+                            </div>
+                            <div class="card-footer">
+                                <a t-attf-href="/my/sanctions/#{sanction.id}/convocation.pdf"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="fa fa-download me-1"/>
+                                    Télécharger la convocation (PDF)
+                                </a>
+                            </div>
+                        </div>
+                    </t>
+
+                    <!-- ════ Formulaire réponse audition ════ -->
+                    <t t-if="sanction.state == 'audition'">
+                        <div class="card mb-4 border-primary">
+                            <div class="card-header fw-semibold text-primary">
+                                <i class="fa fa-pencil me-2"/>
+                                Votre réponse / Déclaration
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">
+                                    Vous pouvez soumettre votre déclaration concernant
+                                    les faits reprochés. Elle sera transmise directement
+                                    au service RH et versée à votre dossier.
+                                </p>
+                                <t t-if="sanction.employee_response">
+                                    <div class="alert alert-light border mb-3">
+                                        <div class="text-muted small mb-1">
+                                            Réponse déjà enregistrée :
+                                        </div>
+                                        <div t-out="sanction.employee_response"/>
+                                    </div>
+                                    <p class="text-muted small">
+                                        Vous pouvez soumettre une nouvelle réponse
+                                        pour remplacer la précédente.
+                                    </p>
+                                </t>
+                                <form t-attf-action="/my/sanctions/#{sanction.id}/response"
+                                      method="post">
+                                    <input type="hidden" name="csrf_token"
+                                           t-att-value="request.csrf_token()"/>
+                                    <div class="mb-3">
+                                        <label for="employee_response"
+                                               class="form-label fw-semibold">
+                                            Votre déclaration
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <textarea name="employee_response"
+                                                  id="employee_response"
+                                                  class="form-control"
+                                                  rows="6"
+                                                  placeholder="Exposez votre version des faits, vos explications et tout élément que vous souhaitez porter à la connaissance du service RH…"
+                                                  required="required"><t
+                                            t-esc="sanction.employee_response or ''"/></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-paper-plane me-1"/>
+                                        Envoyer ma réponse
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </t>
+
+                    <!-- ════ Réponse de l'employé (lecture seule après audition) ════ -->
+                    <t t-if="sanction.state not in ('draft', 'convoque', 'audition') and sanction.employee_response">
+                        <div class="card mb-4">
+                            <div class="card-header fw-semibold">
+                                <i class="fa fa-comment me-2"/>
+                                Votre déclaration
+                            </div>
+                            <div class="card-body">
+                                <div t-out="sanction.employee_response"/>
+                            </div>
+                        </div>
+                    </t>
+
+                    <!-- ════ Carte : Décision ════ -->
+                    <t t-if="sanction.state in ('decide', 'notifie', 'done')">
+                        <div class="card mb-4 border-danger">
+                            <div class="card-header fw-semibold text-danger">
+                                <i class="fa fa-gavel me-2"/>
+                                Décision disciplinaire
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-sm-6">
+                                        <div class="text-muted small">Sanction prononcée</div>
+                                        <div class="fw-bold fs-5">
+                                            <t t-esc="sanction.sanction_type_id.name"/>
+                                        </div>
+                                        <div>
+                                            <span t-att-class="'badge ' + {
+                                                '1': 'bg-warning text-dark',
+                                                '2': 'bg-warning text-dark',
+                                                '3': 'bg-danger',
+                                                '4': 'bg-dark',
+                                            }.get(sanction.degree or '', 'bg-secondary')">
+                                                <t t-esc="{
+                                                    '1': '1er degré',
+                                                    '2': '2ème degré',
+                                                    '3': '3ème degré',
+                                                    '4': '4ème degré',
+                                                }.get(sanction.degree or '', '?')"/>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="text-muted small">Date de décision</div>
+                                        <div><span t-field="sanction.date_decision"/></div>
+                                    </div>
+                                    <div class="col-sm-3" t-if="sanction.date_effet">
+                                        <div class="text-muted small">Date d'effet</div>
+                                        <div><span t-field="sanction.date_effet"/></div>
+                                    </div>
+                                </div>
+                                <t t-if="sanction.decision_note">
+                                    <div class="text-muted small mb-1">Motifs :</div>
+                                    <div t-out="sanction.decision_note"/>
+                                </t>
+
+                                <!-- Voies de recours -->
+                                <div class="alert alert-light border mt-3 mb-0"
+                                     style="font-size:0.85rem;">
+                                    <i class="fa fa-info-circle me-1 text-muted"/>
+                                    <strong>Voies de recours :</strong>
+                                    Vous disposez d'un délai de 15 jours à compter de la
+                                    notification pour former un recours auprès de la
+                                    Commission de Discipline.
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a t-attf-href="/my/sanctions/#{sanction.id}/decision.pdf"
+                                   class="btn btn-outline-danger btn-sm">
+                                    <i class="fa fa-download me-1"/>
+                                    Télécharger la décision (PDF)
+                                </a>
+                            </div>
+                        </div>
+                    </t>
+
+                    <!-- ════ Messages chatter ════ -->
+                    <div class="mt-4">
+                        <h6 class="text-muted mb-3">
+                            <i class="fa fa-comments me-1"/>
+                            Historique de la procédure
+                        </h6>
+                        <t t-call="portal.message_thread">
+                            <t t-set="object" t-value="sanction"/>
+                            <t t-set="token" t-value="sanction.access_token"/>
+                            <t t-set="pid" t-value="request.env.user.partner_id.id"/>
+                            <t t-set="hash" t-value="sanction._sign_token(request.env.user.partner_id.id)"/>
+                            <t t-set="is_portal" t-value="True"/>
+                        </t>
+                    </div>
+
+                </div>
+            </div>
+
+        </t>
+    </template>
+
+</odoo>

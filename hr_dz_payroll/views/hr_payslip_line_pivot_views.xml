@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============ Vue Recherche ============ -->
+    <record id="hr_payslip_line_search_dz" model="ir.ui.view">
+        <field name="name">hr.payslip.line.search.dz</field>
+        <field name="model">hr.payslip.line</field>
+        <field name="arch" type="xml">
+            <search string="Recherche éléments de paie">
+                <field name="employee_id"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="category_id"/>
+                <field name="slip_id"/>
+
+                <!-- Filtres rapides par code règle -->
+                <filter name="filter_basic" string="Salaire de base"
+                        domain="[('code', '=', 'BASIC')]"/>
+                <filter name="filter_gross" string="Brut cotisable"
+                        domain="[('code', '=', 'GROSS')]"/>
+                <filter name="filter_cnas_sal" string="CNAS Salarié (9%)"
+                        domain="[('code', '=', 'CNAS_SAL')]"/>
+                <filter name="filter_cnas_patr" string="CNAS Patronal (26%)"
+                        domain="[('code', '=', 'CNAS_PATR')]"/>
+                <filter name="filter_imposable" string="Net imposable"
+                        domain="[('code', '=', 'IMPOSABLE')]"/>
+                <filter name="filter_irg" string="IRG"
+                        domain="[('code', '=', 'IRG')]"/>
+                <filter name="filter_net" string="Net à payer"
+                        domain="[('code', '=', 'NET')]"/>
+                <filter name="filter_hs" string="Heures supp."
+                        domain="[('code', 'in', ['HS50', 'HS75', 'HS100'])]"/>
+
+                <separator/>
+
+                <filter name="filter_confirmed" string="Fiches confirmées"
+                        domain="[('slip_id.state', 'in', ['done', 'paid'])]"/>
+                <filter name="filter_draft" string="Fiches brouillon"
+                        domain="[('slip_id.state', 'in', ['draft', 'verify'])]"/>
+
+                <filter name="filter_current_year" string="Année en cours"
+                        domain="[('date_from', '&gt;=', context_today().strftime('%Y-01-01')),
+                                 ('date_from', '&lt;=', context_today().strftime('%Y-12-31'))]"/>
+
+                <separator/>
+
+                <filter name="group_employee" string="Employé"
+                        context="{'group_by': 'employee_id'}"/>
+                <filter name="group_month" string="Mois"
+                        context="{'group_by': 'date_from:month'}"/>
+                <filter name="group_code" string="Code règle"
+                        context="{'group_by': 'code'}"/>
+                <filter name="group_category" string="Catégorie"
+                        context="{'group_by': 'category_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ============ Vue Pivot ============ -->
+    <record id="hr_payslip_line_pivot_dz" model="ir.ui.view">
+        <field name="name">hr.payslip.line.pivot.dz</field>
+        <field name="model">hr.payslip.line</field>
+        <field name="priority" eval="8"/>
+        <field name="arch" type="xml">
+            <pivot string="Éléments de paie">
+                <field name="employee_id" type="row"/>
+                <field name="date_from" interval="month" type="col"/>
+                <field name="total" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- ============ Vue Liste ============ -->
+    <record id="hr_payslip_line_list_dz" model="ir.ui.view">
+        <field name="name">hr.payslip.line.list.dz</field>
+        <field name="model">hr.payslip.line</field>
+        <field name="priority" eval="8"/>
+        <field name="arch" type="xml">
+            <list string="Éléments de paie" default_order="date_from desc, employee_id, sequence">
+                <field name="date_from" string="Mois" widget="date"/>
+                <field name="employee_id"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="category_id"/>
+                <field name="quantity"/>
+                <field name="rate"/>
+                <field name="total" sum="Total"/>
+                <field name="slip_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ============ Action ============ -->
+    <record id="action_payslip_line_pivot" model="ir.actions.act_window">
+        <field name="name">Analyse des éléments de paie</field>
+        <field name="res_model">hr.payslip.line</field>
+        <field name="view_mode">pivot,list</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('hr_payslip_line_pivot_dz')}),
+            (0, 0, {'view_mode': 'list',  'view_id': ref('hr_payslip_line_list_dz')}),
+        ]"/>
+        <field name="domain">[('slip_id.state', 'in', ['done', 'paid'])]</field>
+        <field name="context">{'search_default_filter_current_year': 1}</field>
+        <field name="search_view_id" ref="hr_payslip_line_search_dz"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucune donnée de paie trouvée.
+            </p>
+            <p>
+                Confirmez des fiches de paie pour voir l'analyse des éléments de paie.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ Menu ============ -->
+    <menuitem id="menu_payslip_line_pivot"
+              name="Analyse éléments de paie"
+              action="action_payslip_line_pivot"
+              parent="menu_payroll_reports"
+              sequence="50"/>
+
+</odoo>

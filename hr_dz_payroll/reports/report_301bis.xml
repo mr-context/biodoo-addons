@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_301bis_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.internal_layout">
+                    <div class="page" style="font-size: 9px;">
+                        <!-- Header -->
+                        <div style="text-align: left; margin-bottom: 10px;">
+                            Raison sociale: <span t-field="doc.company_id.name"/><br/>
+                            Adresse: <span t-field="doc.company_id.street"/><br/>
+                            Année: <span t-field="doc.year"/>
+                        </div>
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <h3>Déclaration des 301BIS</h3>
+                        </div>
+
+                        <!-- Main table - 12 month columns like official format -->
+                        <table class="table table-bordered table-sm" style="font-size: 8px;">
+                            <thead>
+                                <tr>
+                                    <th scope="col">N° SS</th>
+                                    <th scope="col">Nom &amp; Prénom</th>
+                                    <th scope="col">Date naissance</th>
+                                    <th scope="col">Janvier</th>
+                                    <th scope="col">Février</th>
+                                    <th scope="col">Mars</th>
+                                    <th scope="col">Avril</th>
+                                    <th scope="col">Mai</th>
+                                    <th scope="col">Juin</th>
+                                    <th scope="col">Juillet</th>
+                                    <th scope="col">Août</th>
+                                    <th scope="col">Septembre</th>
+                                    <th scope="col">Octobre</th>
+                                    <th scope="col">Novembre</th>
+                                    <th scope="col">Décembre</th>
+                                    <th scope="col">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.employee_ids" t-as="employee">
+                                    <tr>
+                                        <td style="vertical-align: middle; text-align:center;">
+                                            <span t-field="employee.identification_id"/>
+                                        </td>
+                                        <td style="vertical-align: middle; text-align:center; word-wrap: break-word;">
+                                            <span t-field="employee.employee_id.name"/>
+                                        </td>
+                                        <td style="vertical-align: middle; text-align:center;">
+                                            <span t-field="employee.birthday"/>
+                                        </td>
+                                        <!-- Jan -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_01"/><br/>
+                                            <span t-field="employee.irg_01"/>
+                                        </td>
+                                        <!-- Fev -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_02"/><br/>
+                                            <span t-field="employee.irg_02"/>
+                                        </td>
+                                        <!-- Mar -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_03"/><br/>
+                                            <span t-field="employee.irg_03"/>
+                                        </td>
+                                        <!-- Avr -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_04"/><br/>
+                                            <span t-field="employee.irg_04"/>
+                                        </td>
+                                        <!-- Mai -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_05"/><br/>
+                                            <span t-field="employee.irg_05"/>
+                                        </td>
+                                        <!-- Jun -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_06"/><br/>
+                                            <span t-field="employee.irg_06"/>
+                                        </td>
+                                        <!-- Jul -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_07"/><br/>
+                                            <span t-field="employee.irg_07"/>
+                                        </td>
+                                        <!-- Aou -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_08"/><br/>
+                                            <span t-field="employee.irg_08"/>
+                                        </td>
+                                        <!-- Sep -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_09"/><br/>
+                                            <span t-field="employee.irg_09"/>
+                                        </td>
+                                        <!-- Oct -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_10"/><br/>
+                                            <span t-field="employee.irg_10"/>
+                                        </td>
+                                        <!-- Nov -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_11"/><br/>
+                                            <span t-field="employee.irg_11"/>
+                                        </td>
+                                        <!-- Dec -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <span t-field="employee.base_12"/><br/>
+                                            <span t-field="employee.irg_12"/>
+                                        </td>
+                                        <!-- Total -->
+                                        <td style="vertical-align: middle; text-align:right;">
+                                            <strong><span t-field="employee.total_imp"/><br/>
+                                            <span t-field="employee.total_irg"/></strong>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

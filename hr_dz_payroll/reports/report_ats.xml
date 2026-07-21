@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============ ATS Recto : formulaire CNAS positionnement absolu ============ -->
+    <template id="report_ats_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <!-- PAGE 1 : Recto - Formulaire CNAS (positionnement absolu) -->
+                <t t-call="web.basic_layout">
+                    <div align="left">
+                        <!-- EMPLOYEUR -->
+                        <span t-attf-style="position:absolute;padding-left:5cm;margin-top:5.7cm;"
+                              t-field="doc.company_id.name"/>
+                        <span t-attf-style="position:absolute;padding-left:4cm;margin-top:7.1cm;">
+                            <t t-out="doc.company_id.company_registry or ''"/>
+                        </span>
+                        <span t-attf-style="position:absolute;padding-left:3cm;margin-top:7.7cm;"
+                              t-field="doc.company_id.street"/>
+
+                        <!-- SALARIÉ -->
+                        <span t-attf-style="position:absolute;padding-left:3cm;margin-top:10.2cm;"
+                              t-field="doc.employee_id.name"/>
+                        <span t-attf-style="position:absolute;padding-left:9.3cm;margin-top:10.5cm;"
+                              t-out="doc.matricule or ''"/>
+                        <span t-attf-style="position:absolute;padding-left:3cm;margin-top:11.6cm;"
+                              t-field="doc.birthday"/>
+                        <span t-attf-style="position:absolute;padding-left:7cm;margin-top:11.6cm;"
+                              t-out="doc.place_of_birth or ''"/>
+                        <span t-attf-style="position:absolute;padding-left:3.5cm;margin-top:12.6cm;"
+                              t-out="doc.job_id.name if doc.job_id else ''"/>
+
+                        <!-- N° Sécurité Sociale -->
+                        <span t-attf-style="position:absolute;padding-left:9.3cm;margin-top:11.1cm;"
+                              t-out="doc.identification_id or ''"/>
+                    </div>
+                </t>
+
+                <!-- PAGE 2 : Verso - Tableau des données mensuelles -->
+                <t t-call="web.internal_layout">
+                    <div class="page">
+                        <h4 class="text-center" style="margin-bottom: 20px;">
+                            ATS - <span t-field="doc.employee_id.name"/>
+                            (<span t-field="doc.date_from"/> - <span t-field="doc.date_to"/>)
+                        </h4>
+
+                        <table class="table table-bordered table-sm" style="margin-top: 20px;">
+                            <thead>
+                                <tr>
+                                    <th>Période</th>
+                                    <th class="text-end">J. Présence</th>
+                                    <th class="text-end">Base cotisable</th>
+                                    <th class="text-end">Retenue SS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.line_ids" t-as="line">
+                                    <tr>
+                                        <td><span t-field="line.period"/></td>
+                                        <td class="text-end"><span t-field="line.nb_jours"/></td>
+                                        <td class="text-end"><span t-field="line.base_cotisable" t-options='{"widget": "float", "precision": 2}'/></td>
+                                        <td class="text-end"><span t-field="line.retenue_ss" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                            <tfoot>
+                                <tr class="fw-bold">
+                                    <td colspan="2">Totaux</td>
+                                    <td class="text-end"><span t-field="doc.total_base_cotisable" t-options='{"widget": "float", "precision": 2}'/></td>
+                                    <td class="text-end"><span t-field="doc.total_retenue_ss" t-options='{"widget": "float", "precision": 2}'/></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <br/>
+                        <div style="text-align:right; margin-top:20px; margin-right:50px;">
+                            <p>Signature et cachet de l'employeur</p>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

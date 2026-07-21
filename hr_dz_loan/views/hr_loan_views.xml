@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Vues hr.loan
+    ================================================================ -->
+
+    <record id="hr_loan_view_list" model="ir.ui.view">
+        <field name="name">hr.loan.list</field>
+        <field name="model">hr.loan</field>
+        <field name="arch" type="xml">
+            <list string="Prêts salariaux"
+                  decoration-success="state == 'closed'"
+                  decoration-info="state == 'ongoing'"
+                  decoration-warning="state == 'pending_sign'"
+                  decoration-danger="state == 'refused'"
+                  decoration-muted="state == 'draft'">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="amount" sum="Total"/>
+                <field name="nb_months"/>
+                <field name="amount_per_month"/>
+                <field name="amount_remaining" sum="Total restant"/>
+                <field name="date_request"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'closed'"
+                       decoration-info="state in ('approved', 'ongoing')"
+                       decoration-danger="state == 'refused'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_loan_view_form" model="ir.ui.view">
+        <field name="name">hr.loan.form</field>
+        <field name="model">hr.loan</field>
+        <field name="arch" type="xml">
+            <form string="Prêt salarial">
+                <header>
+                    <!-- Étape 1 : Brouillon → Demander signature (imprime l'engagement) -->
+                    <button name="action_request_sign"
+                            string="Imprimer l'engagement"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"
+                            confirm="Imprimer le bon d'engagement et passer en attente de signature ?"/>
+                    <!-- Étape 2 : Après signatures → Approuver -->
+                    <button name="action_approve"
+                            string="Approuver le prêt"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'pending_sign'"
+                            confirm="Confirmer les signatures et approuver le prêt ?"/>
+                    <button name="action_refuse"
+                            string="Refuser"
+                            type="object"
+                            class="btn-danger"
+                            invisible="state not in ('draft', 'pending_sign')"/>
+                    <button name="action_recompute_schedule"
+                            string="Recalculer l'échéancier"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state not in ('ongoing', 'approved')"/>
+                    <button name="action_add_month"
+                            string="+ 1 mois"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state not in ('ongoing', 'approved')"
+                            confirm="Ajouter une mensualité et recalculer ?"/>
+                    <button name="action_reset_draft"
+                            string="Remettre en brouillon"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state not in ('refused', 'pending_sign')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,pending_sign,approved,ongoing,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Informations">
+                            <field name="employee_id" readonly="state != 'draft'"/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="nb_months" readonly="state != 'draft'"/>
+                            <field name="amount_per_month"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Remboursement">
+                            <field name="amount_paid"/>
+                            <field name="amount_remaining"/>
+                            <field name="date_request"/>
+                            <field name="date_approval" readonly="1"/>
+                            <field name="ticket_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Motif">
+                        <field name="reason" nolabel="1" readonly="state != 'draft'"/>
+                    </group>
+                    <group string="Signatures &amp; engagement"
+                           invisible="state not in ('pending_sign', 'approved', 'ongoing', 'closed')">
+                        <group>
+                            <field name="commitment_signed"/>
+                            <field name="bank_check_signed"/>
+                        </group>
+                        <group>
+                            <field name="bank_check_number"
+                                   placeholder="Ex : CHQ-2024-00123"/>
+                            <field name="commitment_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Échéancier" name="schedule">
+                            <field name="loan_line_ids" nolabel="1">
+                                <list editable="bottom"
+                                      decoration-success="paid == True"
+                                      decoration-muted="paid == False">
+                                    <field name="date"/>
+                                    <field name="amount"/>
+                                    <field name="paid"/>
+                                    <field name="date_paid" readonly="1"/>
+                                    <field name="payslip_id" readonly="1"/>
+                                    <button name="action_mark_paid"
+                                            string="Marquer payé"
+                                            type="object"
+                                            icon="fa-check"
+                                            invisible="paid == True"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="hr_loan_view_search" model="ir.ui.view">
+        <field name="name">hr.loan.search</field>
+        <field name="model">hr.loan</field>
+        <field name="arch" type="xml">
+            <search string="Prêts salariaux">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <filter string="En cours" name="ongoing"
+                        domain="[('state', 'in', ['approved', 'ongoing'])]"/>
+                <filter string="Clôturés" name="closed"
+                        domain="[('state', '=', 'closed')]"/>
+                <filter string="Refusés" name="refused"
+                        domain="[('state', '=', 'refused')]"/>
+                <group>
+                    <filter string="Employé" name="group_employee"
+                            context="{'group_by': 'employee_id'}"/>
+                    <filter string="État" name="group_state"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Extend assistance.ticket : champs LOAN -->
+    <record id="assistance_ticket_loan_fields" model="ir.ui.view">
+        <field name="name">assistance.ticket.loan.fields</field>
+        <field name="model">assistance.ticket</field>
+        <field name="inherit_id" ref="hr_dz_requests.assistance_ticket_form_hr_request"/>
+        <field name="arch" type="xml">
+
+            <!-- Boutons workflow prêt dans le header, avant la barre de statut -->
+            <xpath expr="//field[@name='hr_validation_state'][@widget='statusbar']" position="before">
+                <!-- Imprimer engagement (prêt en brouillon) -->
+                <button name="action_print_loan_commitment"
+                        string="Imprimer l'engagement"
+                        type="object"
+                        class="btn-primary"
+                        invisible="hr_request_type_code != 'LOAN' or not hr_loan_id or hr_loan_state != 'draft'"/>
+                <!-- Approuver le prêt (après signatures confirmées) -->
+                <button name="action_approve_loan"
+                        string="Approuver le prêt"
+                        type="object"
+                        class="btn-success"
+                        invisible="hr_request_type_code != 'LOAN' or not hr_loan_id or hr_loan_state != 'pending_sign'"
+                        confirm="Les deux signatures sont bien confirmées. Approuver le prêt et générer l'échéancier ?"/>
+            </xpath>
+
+            <!-- Section LOAN après "Demande de congé" -->
+            <xpath expr="//group[@name='hr_conge']" position="after">
+                <group string="Prêt salarial"
+                       invisible="hr_request_type_code != 'LOAN'">
+                    <group>
+                        <field name="hr_loan_amount"/>
+                        <field name="hr_loan_nb_months"/>
+                        <field name="hr_loan_amount_per_month" readonly="1"/>
+                    </group>
+                    <group>
+                        <field name="hr_loan_id" readonly="1"/>
+                        <field name="hr_loan_state" widget="badge" readonly="1"
+                               invisible="not hr_loan_id"
+                               decoration-warning="hr_loan_state == 'pending_sign'"
+                               decoration-success="hr_loan_state in ('approved', 'ongoing', 'closed')"
+                               decoration-info="hr_loan_state == 'draft'"
+                               decoration-danger="hr_loan_state == 'refused'"/>
+                    </group>
+                    <!-- Signatures — visibles dès que le prêt est en attente de signature -->
+                    <group string="Signatures &amp; chèque de banque"
+                           invisible="not hr_loan_id or hr_loan_state == 'draft'">
+                        <group>
+                            <field name="hr_loan_commitment_signed"/>
+                            <field name="hr_loan_bank_check_signed"/>
+                        </group>
+                        <group>
+                            <field name="hr_loan_bank_check_number"/>
+                            <field name="hr_loan_commitment_date"/>
+                        </group>
+                    </group>
+                    <group col="1">
+                        <field name="hr_loan_reason" nolabel="1"
+                               placeholder="Motif de la demande de prêt…"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Actions et menus
+    ================================================================ -->
+
+    <record id="action_hr_loan" model="ir.actions.act_window">
+        <field name="name">Prêts salariaux</field>
+        <field name="res_model">hr.loan</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_ongoing': 1}</field>
+    </record>
+
+    <!-- Menu sous Assistance -->
+    <menuitem id="menu_hr_loan"
+              name="Prêts salariaux"
+              parent="assistance.menu_assistance_root"
+              action="action_hr_loan"
+              sequence="20"/>
+
+</odoo>

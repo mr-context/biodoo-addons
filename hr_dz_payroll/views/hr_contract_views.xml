@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_version_view_form_cnas" model="ir.ui.view">
+        <field name="name">hr.version.form.cnas.patron</field>
+        <field name="model">hr.version</field>
+        <field name="inherit_id" ref="hr_dz_contract.hr_version_contract_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Ajouter les champs CNAS patronal après les indemnités journalières -->
+            <xpath expr="//page[@name='salary']/group/group[1]" position="inside">
+                <separator string="Mutuelle (Art. 70 CIDTA)"/>
+                <label for="mutuelle_taux"/>
+                <div class="o_row">
+                    <field name="mutuelle_taux" class="o_hr_narrow_field"/>
+                    <span>% du brut cotisable (0 = pas de mutuelle)</span>
+                </div>
+                <separator string="CNAS Patronal"/>
+                <label for="cnas_patron_taux_special"/>
+                <div class="o_row">
+                    <field name="cnas_patron_taux_special" class="o_hr_narrow_field"/>
+                    <span>% (défaut : 26%)</span>
+                </div>
+                <label for="cnas_patron_date_debut"/>
+                <div class="o_row">
+                    <field name="cnas_patron_date_debut"/>
+                </div>
+                <label for="cnas_patron_date_fin"/>
+                <div class="o_row">
+                    <field name="cnas_patron_date_fin"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Simulation salaire théorique sur le contrat — Format Fiche de Paie -->
+    <record id="hr_version_view_form_simulation" model="ir.ui.view">
+        <field name="name">hr.version.form.simulation.salaire</field>
+        <field name="model">hr.version</field>
+        <field name="inherit_id" ref="hr_dz_contract.hr_version_contract_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='primes']" position="after">
+                <page string="Simulation Salaire" name="simulation">
+
+                    <!-- En-tête -->
+                    <div class="alert alert-info d-flex align-items-center gap-2 mb-3" role="alert">
+                        <i class="fa fa-calculator fa-lg" title="Simulateur"/>
+                        <span class="flex-grow-1">
+                            <strong>Simulation théorique</strong> — Mois complet sans absence
+                            (<field name="working_days_per_month" readonly="1" nolabel="1"
+                                    class="d-inline fw-bold"/> j. ouvrables) ·
+Plafonds et taux configurables via Paramètres légaux · Mis à jour automatiquement.
+                        </span>
+                        <div class="d-flex align-items-center gap-2 ms-3 border-start ps-3">
+                            <i class="fa fa-graduation-cap text-warning" title="Prime de scolarité"/>
+                            <span class="fw-semibold" style="white-space:nowrap;">Simuler septembre</span>
+                            <field name="sim_is_september" nolabel="1" widget="boolean_toggle"/>
+                        </div>
+                    </div>
+
+                    <!-- ══ BULLETIN ══════════════════════════════════════════════ -->
+                    <div class="row g-0" style="font-size:0.92rem;">
+
+                        <!-- ─── COLONNE GAUCHE : GAINS ──────────────────────── -->
+                        <div class="col-md-6 pe-md-3">
+
+                            <!-- Titre section -->
+                            <div class="d-flex align-items-center mb-2 pb-1 border-bottom border-primary">
+                                <span class="fw-bold text-primary me-1">&#9654;</span>
+                                <strong class="text-primary">GAINS</strong>
+                            </div>
+
+                            <!-- Tableau des gains -->
+                            <table class="table table-sm table-borderless mb-0">
+                                <tbody>
+                                    <!-- Salaire de base -->
+                                    <tr>
+                                        <td class="ps-0 text-muted" style="width:62%">
+                                            Salaire de Base
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Salaire mensuel brut de base défini dans le contrat (champ Salaire). Sert de référence pour tous les calculs."/>
+                                        </td>
+                                        <td class="text-end fw-semibold pe-0">
+                                            <field name="sim_basic" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Ind. Transport (non cotisable) -->
+                                    <tr invisible="not transport_allowance_enabled">
+                                        <td class="ps-0 text-muted">
+                                            Ind. Transport
+                                            <span class="badge text-bg-secondary ms-1" style="font-size:0.7rem;">NON COT.</span>
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Exonérée de CNAS dans la limite du plafond (configurable). IMPOSABLE à l'IRG. L'excédent est réintégré dans le Brut Cotisable."/>
+                                        </td>
+                                        <td class="text-end text-muted pe-0">
+                                            <field name="sim_transport" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Ind. Panier (non cotisable) -->
+                                    <tr invisible="not meal_allowance_enabled">
+                                        <td class="ps-0 text-muted">
+                                            Ind. Panier / Repas
+                                            <span class="badge text-bg-secondary ms-1" style="font-size:0.7rem;">NON COT.</span>
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Même règle que le transport : exonérée de CNAS dans la limite du plafond. IMPOSABLE à l'IRG. L'excédent est réintégré dans le Brut Cotisable."/>
+                                        </td>
+                                        <td class="text-end text-muted pe-0">
+                                            <field name="sim_panier" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Primes -->
+                                    <tr invisible="not prime_line_ids">
+                                        <td class="ps-0 text-muted">
+                                            Primes
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Somme des primes définies dans l'onglet Primes. Toutes les primes sont cotisables (CNAS) et imposables (IRG) — elles font partie intégrante du Brut Cotisable."/>
+                                        </td>
+                                        <td class="text-end pe-0">
+                                            <field name="sim_primes" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- PSU -->
+                                    <tr invisible="not sim_psu">
+                                        <td class="ps-0 text-muted">
+                                            PSU
+                                            <span class="badge text-bg-secondary ms-1" style="font-size:0.7rem;">NON COT.</span>
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Prime de Salaire Unique (Décret 25-168) : montant configurable via Paramètres légaux. Versée au salarié marié dont le conjoint ne travaille pas. Non cotisable, non imposable, remboursée par la CNAS."/>
+                                        </td>
+                                        <td class="text-end text-muted pe-0">
+                                            <field name="sim_psu" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- AF -->
+                                    <tr invisible="not sim_af">
+                                        <td class="ps-0 text-muted">
+                                            Alloc. Familiales
+                                            <span class="badge text-bg-secondary ms-1" style="font-size:0.7rem;">NON COT.</span>
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Allocations Familiales (Décret 25-168) : taux et seuil configurables via Paramètres légaux. Non cotisables, non imposables, remboursées par la CNAS. Exclues du Net à Payer."/>
+                                        </td>
+                                        <td class="text-end text-muted pe-0">
+                                            <field name="sim_af" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Prime Scolarité -->
+                                    <tr invisible="not sim_scolarite">
+                                        <td class="ps-0">
+                                            <span invisible="not sim_is_september" class="fw-semibold">
+                                                Prime Scolarité
+                                            </span>
+                                            <span invisible="sim_is_september" class="text-muted">
+                                                Prime Scolarité
+                                            </span>
+                                            <span invisible="not sim_is_september"
+                                                  class="badge text-bg-success ms-1" style="font-size:0.7rem;">SEPT. ✓</span>
+                                            <span invisible="sim_is_september"
+                                                  class="badge text-bg-warning text-dark ms-1" style="font-size:0.7rem;">SEPT.</span>
+                                            <span class="badge text-bg-secondary ms-1" style="font-size:0.7rem;">NON COT.</span>
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Prime de Scolarité (Décret 25-168) : montant configurable via Paramètres légaux. Versée en septembre. Activez le toggle 'Simuler septembre' pour l'inclure dans le Net à Payer."/>
+                                        </td>
+                                        <td class="text-end pe-0">
+                                            <span invisible="sim_is_september" class="text-muted">
+                                                <field name="sim_scolarite" readonly="1" nolabel="1"
+                                                       widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                            </span>
+                                            <span invisible="not sim_is_september" class="fw-semibold">
+                                                <field name="sim_scolarite" readonly="1" nolabel="1"
+                                                       widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                            </span>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Séparateur -->
+                                    <tr>
+                                        <td colspan="2" class="p-0"><hr class="my-1"/></td>
+                                    </tr>
+
+                                    <!-- Brut Cotisable -->
+                                    <tr>
+                                        <td class="ps-0 fw-bold">
+                                            Brut Cotisable
+                                            <small class="fw-normal text-muted">(assiette CNAS)</small>
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Formule : Base + Primes + Excédent Transport + Excédent Panier. L'excédent = MAX(0, taux_journalier − 500) × jours. Les indemnités NON COT. en sont exclues. C'est sur ce montant que se calculent la CNAS (9 %) et l'IRG."/>
+                                        </td>
+                                        <td class="text-end fw-bold text-primary pe-0">
+                                            <field name="sim_brut" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- + Ind. Non Cotisables -->
+                                    <tr invisible="not sim_non_cot">
+                                        <td class="ps-0 text-muted">
+                                            + Ind. Non Cotisables
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Somme des portions exonérées de CNAS (transport + panier ≤ 500 DA/j). Exonérées de CNAS mais imposables à l'IRG (Art. 104 CIDTA). Ces montants entrent dans la base IRG via le Net Imposable."/>
+                                        </td>
+                                        <td class="text-end text-muted pe-0">
+                                            <field name="sim_non_cot" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Total Brut Versé -->
+                                    <tr invisible="not sim_non_cot" style="background:#f0f4ff;">
+                                        <td class="ps-1 fw-bold">
+                                            Total Brut Versé
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Montant total effectivement décaissé par l'employeur au titre du salaire brut : Brut Cotisable + Ind. Non Cotisables. Ne pas confondre avec le Coût Total (qui inclut la CNAS patronale)."/>
+                                        </td>
+                                        <td class="text-end fw-bold pe-1">
+                                            <field name="sim_brut_total" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- ─── COLONNE DROITE : RETENUES + NET ─────────────── -->
+                        <div class="col-md-6 ps-md-3 mt-3 mt-md-0">
+
+                            <!-- Titre section RETENUES -->
+                            <div class="d-flex align-items-center mb-2 pb-1 border-bottom border-danger">
+                                <span class="fw-bold text-danger me-1">&#9654;</span>
+                                <strong class="text-danger">RETENUES</strong>
+                            </div>
+
+                            <table class="table table-sm table-borderless mb-0">
+                                <tbody>
+
+                                    <!-- CNAS Salarié -->
+                                    <tr>
+                                        <td class="ps-0 text-muted" style="width:62%">
+                                            CNAS Salarié
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Cotisation de Sécurité Sociale salariale (Loi 83-14). Taux configurable via Paramètres légaux. Calculée sur le Brut Cotisable uniquement. Déductible de l'assiette IRG."/>
+                                        </td>
+                                        <td class="text-end text-danger pe-0">
+                                            <field name="sim_cnas" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Mutuelle (si applicable) -->
+                                    <tr invisible="not mutuelle_taux">
+                                        <td class="ps-0 text-muted">
+                                            Mutuelle
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Cotisation mutuelle déductible du net imposable (Art. 70 CIDTA). Taux défini dans l'onglet Salaire. Réduit l'assiette IRG."/>
+                                        </td>
+                                        <td class="text-end text-danger pe-0">
+                                            <field name="sim_mutuelle" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Net Imposable -->
+                                    <tr>
+                                        <td class="ps-0 fw-semibold">
+                                            Net Imposable
+                                            <small class="fw-normal text-muted">(assiette IRG)</small>
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Formule : Brut Cotisable − CNAS (9 %) − Mutuelle + Transport + Panier (portions ≤ 500 DA/j). Transport/Panier sont exonérés de CNAS mais imposables à l'IRG (Art. 104 CIDTA). PSU, AF, Scolarité restent NON imposables (Art. 70 CIDTA)."/>
+                                        </td>
+                                        <td class="text-end fw-semibold pe-0">
+                                            <field name="sim_imposable" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- IRG -->
+                                    <tr>
+                                        <td class="ps-0 text-muted">
+                                            IRG (Art. 104 CIDTA)
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Barème progressif mensuel : 0 % (≤ 20 000) · 23 % (20 001-40 000) · 27 % (40 001-80 000) · 30 % (80 001-160 000) · 33 % (160 001-320 000) · 35 % (> 320 000). Abattement 40 % plafonné entre 1 000 et 1 500 DA/mois. Exonération totale si Net Imposable ≤ 30 000 DA. Décote progressive entre 30 001 et 35 000 DA."/>
+                                        </td>
+                                        <td class="text-end text-danger pe-0">
+                                            <field name="sim_irg" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Séparateur -->
+                                    <tr>
+                                        <td colspan="2" class="p-0"><hr class="my-1"/></td>
+                                    </tr>
+
+                                    <!-- NET À PAYER -->
+                                    <tr style="background:#e8f5e9; border-radius:6px;">
+                                        <td class="ps-2 fw-bold" style="font-size:1.05rem;">
+                                            <i class="fa fa-check-circle text-success me-1" title="Net à payer"/>
+                                            NET À PAYER
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Formule : Brut Cotisable − CNAS − IRG − Mutuelle + Ind. Non Cotisables + PSU. Les AF sont exclues du NET (remboursées par la CNAS)."/>
+                                        </td>
+                                        <td class="text-end fw-bold text-success pe-2" style="font-size:1.05rem;">
+                                            <field name="sim_net" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Espace -->
+                                    <tr><td colspan="2" style="height:10px;"/></tr>
+
+                                    <!-- Titre Charges patronales -->
+                                    <tr>
+                                        <td colspan="2" class="ps-0 pb-1">
+                                            <span class="fw-bold text-secondary">CHARGES PATRONALES</span>
+                                            <hr class="mt-1 mb-0 border-secondary"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- CNAS Patronale -->
+                                    <tr>
+                                        <td class="ps-0 text-muted">
+                                            CNAS Patronale
+                                            <small class="text-muted">(26 % ou taux spécial)</small>
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Taux standard 26 % = 25 % CNAS + 0,5 % FNPOS + 0,5 % Œuvres sociales. Taux réduit possible via ANEM/ANSEJ/CTA (5 %, 15 % ou 2,5 %) si dates de taux spécial définies dans l'onglet Salaire. Assiette = Brut Cotisable uniquement (les NON COT. n'génèrent pas de charges patronales)."/>
+                                        </td>
+                                        <td class="text-end text-secondary pe-0">
+                                            <field name="sim_cnas_patr" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Coût Total Employeur -->
+                                    <tr style="background:#fff3e0;">
+                                        <td class="ps-2 fw-bold">
+                                            <i class="fa fa-building-o me-1 text-warning" title="Coût employeur"/>
+                                            Coût Total Employeur
+                                            <i class="fa fa-info-circle text-info ms-1"
+                                               title="Formule : Brut Cotisable + CNAS Patronale. Représente le décaissement réel de l'entreprise pour ce poste (hors cotisations CACOBATPH, TFP, TA selon secteur)."/>
+                                        </td>
+                                        <td class="text-end fw-bold pe-2">
+                                            <field name="sim_cout_employeur" readonly="1" nolabel="1"
+                                                   widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                        </td>
+                                    </tr>
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div><!-- /row -->
+
+                    <!-- ══ CALCUL INVERSE ═══════════════════════════════════════ -->
+                    <div class="mt-4 mb-3">
+                        <div class="d-flex align-items-center mb-2 pb-1 border-bottom border-dark">
+                            <i class="fa fa-exchange fa-lg text-dark me-2" title="Calcul inverse"/>
+                            <strong>CALCUL INVERSE</strong>
+                            <small class="text-muted ms-2">(du NET vers Salaire de Base)</small>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="sim_target_net" class="fw-bold"/>
+                                <div class="o_row">
+                                    <field name="sim_target_net" class="o_hr_narrow_field"
+                                           placeholder="Ex: 160 000"/>
+                                    <span>DA</span>
+                                </div>
+                            </div>
+                            <div class="col-md-8" invisible="not sim_reverse_wage">
+                                <table class="table table-sm table-borderless mb-0" style="font-size:0.92rem;">
+                                    <tbody>
+                                        <!-- ── Résultats hors primes ── -->
+                                        <tr>
+                                            <td colspan="2" class="ps-2 text-muted fw-bold" style="font-size:0.80rem; letter-spacing:0.04em;">
+                                                HORS PRIMES CONTRACTUELLES
+                                            </td>
+                                        </tr>
+                                        <tr style="background:#e3f2fd;">
+                                            <td class="ps-2 fw-bold" style="width:55%">
+                                                <i class="fa fa-bullseye text-primary me-1"/>
+                                                Salaire de base nécessaire
+                                            </td>
+                                            <td class="text-end fw-bold text-primary pe-2">
+                                                <field name="sim_reverse_wage" readonly="1" nolabel="1"
+                                                       widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-2 text-muted">Brut Cotisable (hors primes)</td>
+                                            <td class="text-end pe-2">
+                                                <field name="sim_reverse_brut" readonly="1" nolabel="1"
+                                                       widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-2 text-muted">Net Imposable (hors primes)</td>
+                                            <td class="text-end pe-2">
+                                                <field name="sim_reverse_imposable" readonly="1" nolabel="1"
+                                                       widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-2 text-muted">IRG (hors primes)</td>
+                                            <td class="text-end text-danger pe-2">
+                                                <field name="sim_reverse_irg" readonly="1" nolabel="1"
+                                                       widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                            </td>
+                                        </tr>
+                                        <!-- ── Estimation avec primes ── -->
+                                        <tr invisible="not sim_reverse_net_with_primes or not prime_line_ids">
+                                            <td colspan="2" class="ps-2 text-muted fw-bold pt-2" style="font-size:0.80rem; letter-spacing:0.04em;">
+                                                AVEC PRIMES DU CONTRAT
+                                            </td>
+                                        </tr>
+                                        <tr style="background:#e8f5e9;" invisible="not sim_reverse_net_with_primes or not prime_line_ids">
+                                            <td class="ps-2 fw-bold">
+                                                <i class="fa fa-plus-circle text-success me-1"/>
+                                                NET estimé (base + primes)
+                                            </td>
+                                            <td class="text-end fw-bold text-success pe-2">
+                                                <field name="sim_reverse_net_with_primes" readonly="1" nolabel="1"
+                                                       widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                            </td>
+                                        </tr>
+                                        <!-- ── Bouton appliquer ── -->
+                                        <tr>
+                                            <td colspan="2" class="text-end pe-2 pt-2">
+                                                <button name="action_apply_reverse_wage" type="object"
+                                                        string="Appliquer ce salaire" class="btn-primary btn-sm"
+                                                        icon="fa-check"
+                                                        confirm="Remplacer le salaire de base actuel par le montant calculé ?"/>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══ BLOC EXPLICATIF ════════════════════════════════════ -->
+                    <details class="mt-3">
+                        <summary class="text-muted" style="cursor:pointer; font-size:0.88rem; user-select:none;">
+                            <i class="fa fa-book me-1" title="Références légales"/>
+                            <strong>Pourquoi ces calculs ?</strong> — Références légales &amp; formules détaillées
+                        </summary>
+                        <div class="row mt-2 g-2" style="font-size:0.85rem;">
+
+                            <!-- Règle transport/panier -->
+                            <div class="col-md-6">
+                                <div class="border rounded p-2" style="background:#f8f9fa;">
+                                    <strong class="text-primary">
+                                        <i class="fa fa-car me-1" title="Transport"/>
+                                        Plafond Transport &amp; Panier
+                                    </strong>
+                                    <p class="mb-1 mt-1">
+                                        Art. 87 bis du Code du Travail + circulaires CNAS :
+                                        les indemnités de transport et de panier/repas sont <strong>exonérées de CNAS</strong>
+                                        dans la limite du plafond par jour travaillé.
+                                        <strong>Attention :</strong> elles restent <strong>imposables à l'IRG</strong> (Art. 104 CIDTA).
+                                    </p>
+                                    <code style="font-size:0.8rem;">
+                                        NON_COT = MIN(taux_journalier, plafond) × jours<br/>
+                                        EXCÉDENT = MAX(0, taux_journalier − plafond) × jours → réintégré dans GROSS
+                                    </code>
+                                    <p class="mb-0 mt-1 text-muted">
+                                        <i class="fa fa-cog me-1"/>Plafonds configurables dans
+                                        <strong>Paramètres légaux</strong> (codes : transport_daily_cap, meal_daily_cap).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- CNAS -->
+                            <div class="col-md-6">
+                                <div class="border rounded p-2" style="background:#f8f9fa;">
+                                    <strong class="text-danger">
+                                        <i class="fa fa-shield me-1" title="CNAS"/>
+                                        CNAS — Cotisations Sociales (Loi 83-14)
+                                    </strong>
+                                    <p class="mb-1 mt-1">
+                                        <strong>Salarié</strong> : taux configurable (défaut 9 %) du Brut Cotisable.<br/>
+                                        <strong>Patronale</strong> : taux configurable (défaut 26 % = 25 % CNAS + 0,5 % FNPOS + 0,5 % OS).<br/>
+                                        Taux réduits ANEM/CTA : <strong>5 %</strong>, <strong>15 %</strong> ou <strong>2,5 %</strong>
+                                        (configurables par contrat).
+                                    </p>
+                                    <code style="font-size:0.8rem;">
+                                        CNAS_sal = Brut_Cotisable × taux_salarié<br/>
+                                        CNAS_pat = Brut_Cotisable × taux_patronal
+                                    </code>
+                                    <p class="mb-0 mt-1 text-muted">
+                                        <i class="fa fa-cog me-1"/>Taux dans <strong>Paramètres légaux</strong>
+                                        (codes : cnas_worker_rate, cnas_employer_rate).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- IRG -->
+                            <div class="col-md-6">
+                                <div class="border rounded p-2" style="background:#f8f9fa;">
+                                    <strong class="text-warning">
+                                        <i class="fa fa-percent me-1" title="IRG"/>
+                                        IRG — Barème Art. 104 CIDTA (mensuel)
+                                    </strong>
+                                    <table class="table table-sm table-borderless mb-1 mt-1" style="font-size:0.8rem;">
+                                        <tbody>
+                                            <tr><td>0 — 20 000 DA</td><td class="text-end fw-bold">0 %</td></tr>
+                                            <tr><td>20 001 — 40 000 DA</td><td class="text-end fw-bold">23 %</td></tr>
+                                            <tr><td>40 001 — 80 000 DA</td><td class="text-end fw-bold">27 %</td></tr>
+                                            <tr><td>80 001 — 160 000 DA</td><td class="text-end fw-bold">30 %</td></tr>
+                                            <tr><td>160 001 — 320 000 DA</td><td class="text-end fw-bold">33 %</td></tr>
+                                            <tr><td>&gt; 320 000 DA</td><td class="text-end fw-bold">35 %</td></tr>
+                                        </tbody>
+                                    </table>
+                                    <code style="font-size:0.8rem;">
+                                        Abattement = MIN(MAX(1 000, IRG_brut × 40 %), 1 500) DA<br/>
+                                        IRG_final = IRG_brut − abattement
+                                    </code>
+                                </div>
+                            </div>
+
+                            <!-- Exonération + Décote -->
+                            <div class="col-md-6">
+                                <div class="border rounded p-2" style="background:#f8f9fa;">
+                                    <strong class="text-success">
+                                        <i class="fa fa-star me-1" title="Exonération"/>
+                                        Exonération &amp; Décote IRG
+                                    </strong>
+                                    <p class="mb-1 mt-1">
+                                        <strong>Exonération totale</strong> si Net Imposable <strong>≤ 30 000 DA</strong> → IRG = 0.<br/>
+                                        <strong>Décote</strong> entre 30 001 et 35 000 DA pour éviter un effet de seuil brutal :
+                                    </p>
+                                    <code style="font-size:0.8rem;">
+                                        IRG = (IRG_après_abatt × 137/51) − 27 925/8
+                                    </code>
+                                    <p class="mb-0 mt-1 text-muted">
+                                        Cas handicap/retraité : seuil porté à 42 500 DA,
+                                        décote spécifique entre 42 501 et 47 500 DA.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Prestations Familiales -->
+                            <div class="col-md-6">
+                                <div class="border rounded p-2" style="background:#f8f9fa;">
+                                    <strong class="text-success">
+                                        <i class="fa fa-users me-1" title="Prestations familiales"/>
+                                        Prestations Familiales (Décret 25-168)
+                                    </strong>
+                                    <p class="mb-1 mt-1">
+                                        <strong>Non cotisables &amp; non imposables</strong> — remboursées par la CNAS à l'employeur.<br/>
+                                        <strong>PSU :</strong> montant configurable (marié, conjoint sans emploi).<br/>
+                                        <strong>AF :</strong> taux configurable par enfant selon le brut cotisable. <strong>Exclues du NET</strong>.<br/>
+                                        <strong>Scolarité :</strong> montant configurable par enfant scolarisé (septembre uniquement).
+                                    </p>
+                                    <code style="font-size:0.8rem;">
+                                        PSU = montant paramétré (si marié et conjoint sans emploi)<br/>
+                                        AF = taux × nb_enfants_charge (hors NET)<br/>
+                                        SCOLARITE = montant × nb_enfants_scolarisés (sept.)
+                                    </code>
+                                    <p class="mb-0 mt-1 text-muted">
+                                        <i class="fa fa-cog me-1"/>Montants dans <strong>Paramètres légaux</strong>
+                                        (codes : psu_montant, af_rate_low, af_rate_high, af_threshold, scolarite_montant).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Formule NET -->
+                            <div class="col-12">
+                                <div class="border rounded p-2 text-center" style="background:#e8f5e9; font-size:0.85rem;">
+                                    <strong>Récapitulatif des formules</strong><br/>
+                                    <code>
+                                        BRUT_COT = Base + Primes_cotisables + Excédents(Transport+Panier &gt; plafond/j)<br/>
+                                        NET_IMPOSABLE = BRUT_COT − CNAS − Mutuelle + Transport_non_cot + Panier_non_cot + Primes_nc_imposables<br/>
+                                        IRG = barème(NET_IMPOSABLE) − abattement(40 %, plafonné 1 000–1 500 DA)<br/>
+                                        NET_À_PAYER = BRUT_COT − CNAS − Mutuelle − IRG + NON_COT + PSU<br/>
+                                        COÛT_EMPLOYEUR = BRUT_COT + CNAS_PATRON
+                                    </code>
+                                    <p class="mb-0 mt-1 text-muted">
+                                        <i class="fa fa-cog me-1"/>Tous les taux et montants sont configurables dans
+                                        <strong>Employés → Configuration → Algérie → Paramètres légaux</strong>.
+                                    </p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </details>
+
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,26 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shadow ellipse -->
+  <ellipse cx="32" cy="58" rx="19" ry="4" fill="#C1DBF6"/>
+  <!-- Document body -->
+  <rect x="10" y="5" width="39" height="50" rx="3" fill="white"/>
+  <!-- Header band -->
+  <path d="M10 8 C10 6.3 11.3 5 13 5 H46 C47.7 5 49 6.3 49 8 V18 H10 V8Z" fill="#C1DBF6"/>
+  <!-- Header: person icon -->
+  <circle cx="29.5" cy="11" r="3.5" fill="white"/>
+  <path d="M22 18 C22 14.7 37 14.7 37 18" fill="white"/>
+  <!-- Divider lines between rows -->
+  <line x1="10" y1="30" x2="49" y2="30" stroke="#C1DBF6" stroke-width="1"/>
+  <line x1="10" y1="38" x2="49" y2="38" stroke="#C1DBF6" stroke-width="1"/>
+  <!-- Row 1 label + value -->
+  <rect x="15" y="22" width="14" height="2" rx="1" fill="#374874" opacity="0.5"/>
+  <rect x="37" y="22" width="8" height="2" rx="1" fill="#374874"/>
+  <!-- Row 2 -->
+  <rect x="15" y="33" width="18" height="2" rx="1" fill="#374874" opacity="0.5"/>
+  <rect x="37" y="33" width="8" height="2" rx="1" fill="#374874"/>
+  <!-- Total footer band -->
+  <path d="M10 44 H49 V52 C49 53.7 47.7 55 46 55 H13 C11.3 55 10 53.7 10 52 V44Z" fill="#FBDBD0"/>
+  <rect x="15" y="48" width="10" height="2.5" rx="1" fill="#374874" opacity="0.6"/>
+  <rect x="35" y="47.5" width="10" height="3" rx="1.5" fill="#374874"/>
+  <!-- Document outline -->
+  <rect x="10" y="5" width="39" height="50" rx="3" stroke="#374874" stroke-width="1.5"/>
+</svg>

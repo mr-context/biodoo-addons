@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Privilege (groupe de groupes) — Odoo 19
+    ================================================================ -->
+    <record model="res.groups.privilege" id="res_groups_privilege_assistance">
+        <field name="name">Assistance</field>
+        <field name="category_id" ref="base.module_category_services"/>
+    </record>
+
+    <!-- ================================================================
+         Groupes
+    ================================================================ -->
+    <record id="group_user" model="res.groups">
+        <field name="name">Utilisateur</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_assistance"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_manager" model="res.groups">
+        <field name="name">Responsable</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="res_groups_privilege_assistance"/>
+        <field name="implied_ids" eval="[(4, ref('group_user'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+    </record>
+
+    <data noupdate="1">
+
+        <!-- ================================================================
+             Record rules — Tickets
+        ================================================================ -->
+
+        <!-- Portail : uniquement ses propres tickets sur équipes portail -->
+        <record id="rule_ticket_portal" model="ir.rule">
+            <field name="name">Ticket assistance : accès portail</field>
+            <field name="model_id" ref="model_assistance_ticket"/>
+            <field name="domain_force">[
+                ('partner_id', '=', user.partner_id.id),
+                ('team_id.privacy_visibility', '=', 'portal')
+            ]</field>
+            <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Utilisateur interne : voit selon visibilité de l'équipe -->
+        <!--
+            - Équipe 'internal' ou 'portal' → tous les employés voient
+            - Équipe 'invited_internal'      → seulement les membres de l'équipe
+            - Pas d'équipe                   → visible à tous
+        -->
+        <record id="rule_ticket_user" model="ir.rule">
+            <field name="name">Ticket assistance : accès utilisateur</field>
+            <field name="model_id" ref="model_assistance_ticket"/>
+            <field name="domain_force">['|', '|',
+                ('team_id', '=', False),
+                ('team_id.privacy_visibility', 'in', ['internal', 'portal']),
+                ('team_id.member_ids', 'in', [user.id])
+            ]</field>
+            <field name="groups" eval="[(4, ref('group_user'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Manager : accès complet sans restriction -->
+        <record id="rule_ticket_manager" model="ir.rule">
+            <field name="name">Ticket assistance : accès responsable</field>
+            <field name="model_id" ref="model_assistance_ticket"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_manager'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <!-- ================================================================
+             Record rules — Équipes
+        ================================================================ -->
+
+        <!-- Utilisateur : voit les équipes dont il est membre ou ouvertes -->
+        <record id="rule_team_user" model="ir.rule">
+            <field name="name">Équipe assistance : accès utilisateur</field>
+            <field name="model_id" ref="model_assistance_team"/>
+            <field name="domain_force">['|',
+                ('privacy_visibility', 'in', ['internal', 'portal']),
+                ('member_ids', 'in', [user.id])
+            ]</field>
+            <field name="groups" eval="[(4, ref('group_user'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Manager : toutes les équipes -->
+        <record id="rule_team_manager" model="ir.rule">
+            <field name="name">Équipe assistance : accès responsable</field>
+            <field name="model_id" ref="model_assistance_team"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_manager'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+    </data>
+
+</odoo>

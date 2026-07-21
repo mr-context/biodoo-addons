@@ -1,0 +1,22 @@
+# PRIVE - ne jamais publier
+bridge/
+hr_assistant/
+data/
+data.back/
+data.backup/
+run.txt
+
+# Secrets
+.env
+.env.*
+*.dat
+*.pem
+
+# Artefacts
+__pycache__/
+*.py[cod]
+*.log
+ANALYSE.md
+.DS_Store
+.idea/
+.vscode/

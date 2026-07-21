@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Campaign — Kanban
+    ================================================================ -->
+    <record id="view_hr_prime_campaign_kanban" model="ir.ui.view">
+        <field name="name">hr.prime.campaign.kanban</field>
+        <field name="model">hr.prime.campaign</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="type" class="o_kanban_small_column">
+                <templates>
+                    <t t-name="card">
+                        <field name="state" widget="label_selection"
+                               options="{'classes': {'draft': 'default', 'confirmed': 'warning', 'paid': 'success', 'cancelled': 'danger'}}"/>
+                        <div class="fw-bold fs-5">
+                            <field name="name"/>
+                        </div>
+                        <div class="text-muted">
+                            <field name="date"/>
+                        </div>
+                        <div class="mt-2">
+                            <field name="line_count"/> employé(s) —
+                            <strong><field name="total_amount" widget="monetary"/></strong>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Campaign — List
+    ================================================================ -->
+    <record id="view_hr_prime_campaign_list" model="ir.ui.view">
+        <field name="name">hr.prime.campaign.list</field>
+        <field name="model">hr.prime.campaign</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="type"/>
+                <field name="date"/>
+                <field name="mois_versement" optional="show"/>
+                <field name="annee_versement" optional="hide"/>
+                <field name="line_count"/>
+                <field name="total_amount" widget="monetary"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'confirmed'"
+                       decoration-success="state == 'paid'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Campaign — Form
+    ================================================================ -->
+    <record id="view_hr_prime_campaign_form" model="ir.ui.view">
+        <field name="name">hr.prime.campaign.form</field>
+        <field name="model">hr.prime.campaign</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm" string="Confirmer"
+                            type="object" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_pay" string="Marquer payée"
+                            type="object" class="btn-primary"
+                            invisible="state != 'confirmed'"/>
+                    <button name="action_cancel" string="Annuler"
+                            type="object"
+                            invisible="state in ('paid', 'cancelled')"/>
+                    <button name="action_draft" string="Remettre en brouillon"
+                            type="object"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,confirmed,paid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Ex: Prime Aïd El Fitr 2026"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="type"/>
+                            <field name="date"/>
+                            <label for="mois_versement" string="Versement (bulletin)"/>
+                            <div class="d-flex gap-2">
+                                <field name="mois_versement" placeholder="Mois..."
+                                       class="w-50"/>
+                                <field name="annee_versement" placeholder="Année..."
+                                       class="w-50"/>
+                            </div>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="total_amount" widget="monetary"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Fiscalité">
+                        <group>
+                            <field name="is_cotisable" widget="boolean_toggle"/>
+                            <field name="is_imposable" widget="boolean_toggle"/>
+                        </group>
+                        <group>
+                            <field name="irg_mode" invisible="not is_imposable"
+                                   widget="radio"/>
+                            <field name="irg_taux_forfait"
+                                   invisible="not is_imposable or irg_mode != 'forfaitaire'"/>
+                        </group>
+                    </group>
+
+                    <div invisible="state != 'draft'">
+                        <button name="%(action_hr_prime_import_wizard)d"
+                                string="📥 Importer depuis Excel"
+                                type="action" class="btn-link"/>
+                    </div>
+
+                    <notebook>
+                        <page string="Employés" name="lines">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="employee_id"/>
+                                    <field name="matricule"/>
+                                    <field name="department_id"/>
+                                    <field name="amount"/>
+                                </list>
+                            </field>
+                            <group class="oe_subtotal_footer" invisible="not line_ids">
+                                <field name="total_amount" widget="monetary" class="oe_subtotal_footer_separator"/>
+                            </group>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="note" placeholder="Notes internes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Campaign — Search
+    ================================================================ -->
+    <record id="view_hr_prime_campaign_search" model="ir.ui.view">
+        <field name="name">hr.prime.campaign.search</field>
+        <field name="model">hr.prime.campaign</field>
+        <field name="arch" type="xml">
+            <search string="Primes exceptionnelles">
+                <field name="name"/>
+                <field name="type"/>
+                <filter name="draft" string="Brouillon" domain="[('state', '=', 'draft')]"/>
+                <filter name="confirmed" string="Confirmées" domain="[('state', '=', 'confirmed')]"/>
+                <filter name="paid" string="Payées" domain="[('state', '=', 'paid')]"/>
+                <filter name="this_year" string="Cette année"
+                        domain="[('date', '&gt;=', context_today().strftime('%Y-01-01')),
+                                 ('date', '&lt;=', context_today().strftime('%Y-12-31'))]"/>
+                <group>
+                    <filter name="group_type" string="Type" context="{'group_by': 'type'}"/>
+                    <filter name="group_state" string="État" context="{'group_by': 'state'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Action
+    ================================================================ -->
+    <record id="action_hr_prime_campaign" model="ir.actions.act_window">
+        <field name="name">Primes Exceptionnelles</field>
+        <field name="res_model">hr.prime.campaign</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="context">{'search_default_this_year': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créez votre première campagne de prime
+            </p>
+            <p>
+                Gérez les primes exceptionnelles (Aïd, fin d'année, etc.)
+                et importez les montants depuis un fichier Excel.
+            </p>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Menu — à côté de Prêts salariaux
+    ================================================================ -->
+    <menuitem id="menu_hr_prime"
+              name="Primes exceptionnelles"
+              parent="assistance.menu_assistance_root"
+              action="action_hr_prime_campaign"
+              sequence="25"/>
+
+</odoo>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         assistance.stage — liste
+    ================================================================ -->
+    <record id="view_assistance_stage_list" model="ir.ui.view">
+        <field name="name">assistance.stage.list</field>
+        <field name="model">assistance.stage</field>
+        <field name="arch" type="xml">
+            <list string="Étapes" editable="top">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="team_ids" widget="many2many_tags"/>
+                <field name="fold"/>
+                <field name="is_closed"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         assistance.stage — formulaire
+    ================================================================ -->
+    <record id="view_assistance_stage_form" model="ir.ui.view">
+        <field name="name">assistance.stage.form</field>
+        <field name="model">assistance.stage</field>
+        <field name="arch" type="xml">
+            <form string="Étape">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="is_closed"/>
+                            <field name="fold"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="team_ids" widget="many2many_tags"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Action
+    ================================================================ -->
+    <record id="action_assistance_stage" model="ir.actions.act_window">
+        <field name="name">Étapes</field>
+        <field name="res_model">assistance.stage</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

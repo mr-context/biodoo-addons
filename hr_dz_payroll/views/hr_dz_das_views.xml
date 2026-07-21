@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         LISTE  hr.dz.das
+    ═══════════════════════════════════════════════════════════════════ -->
+    <record id="hr_dz_das_list_view" model="ir.ui.view">
+        <field name="name">hr.dz.das.list</field>
+        <field name="model">hr.dz.das</field>
+        <field name="arch" type="xml">
+            <list string="DAS CNAS" decoration-muted="state == 'draft'">
+                <field name="name"/>
+                <field name="year"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="type_declaration"/>
+                <field name="nbr_salaries"/>
+                <field name="total_assiette" string="Assiette totale (DA)"/>
+                <field name="state"
+                       decoration-success="state == 'done'"
+                       decoration-warning="state == 'draft'"
+                       widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         FORMULAIRE  hr.dz.das
+    ═══════════════════════════════════════════════════════════════════ -->
+    <record id="hr_dz_das_form_view" model="ir.ui.view">
+        <field name="name">hr.dz.das.form</field>
+        <field name="model">hr.dz.das</field>
+        <field name="arch" type="xml">
+            <form string="DAS CNAS — Tasrihatcom">
+                <header>
+                    <button name="action_load" type="object"
+                            string="Recharger les données" class="btn-secondary"
+                            icon="fa-refresh"
+                            invisible="state != 'draft'"/>
+                    <button name="action_generate_files" type="object"
+                            string="Générer les fichiers (.txt)" class="btn-success"
+                            icon="fa-file-text"
+                            invisible="state == 'done' or not line_ids"/>
+                    <button name="action_confirm" type="object"
+                            string="Confirmer" class="btn-primary"
+                            invisible="state != 'draft' or not line_ids"/>
+                    <button name="action_draft" type="object"
+                            string="Remettre en brouillon"
+                            invisible="state != 'done'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Identification Employeur">
+                            <field name="year"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="type_declaration"/>
+                            <field name="num_employeur_cnas"
+                                   placeholder="ex: 1600123456"
+                                   help="Depuis Paramètres > Société > Identifiants CNAS"/>
+                            <field name="centre_payeur"
+                                   placeholder="ex: 16001"
+                                   help="Depuis Paramètres > Société > Identifiants CNAS"/>
+                            <field name="denomination"
+                                   placeholder="Dénomination officielle (30 car. max)"/>
+                        </group>
+                        <group string="Récapitulatif">
+                            <field name="nbr_salaries" readonly="1"/>
+                            <field name="total_t1" readonly="1" string="Assiette T1 (DA)"
+                                   widget="monetary" options="{'currency_field': False}"/>
+                            <field name="total_t2" readonly="1" string="Assiette T2 (DA)"
+                                   widget="monetary" options="{'currency_field': False}"/>
+                            <field name="total_t3" readonly="1" string="Assiette T3 (DA)"
+                                   widget="monetary" options="{'currency_field': False}"/>
+                            <field name="total_t4" readonly="1" string="Assiette T4 (DA)"
+                                   widget="monetary" options="{'currency_field': False}"/>
+                            <field name="total_assiette" readonly="1" string="Total annuel (DA)"
+                                   widget="monetary" options="{'currency_field': False}"/>
+                        </group>
+                    </group>
+
+                    <!-- Téléchargement des fichiers générés -->
+                    <group string="Fichiers Tasrihatcom"
+                           invisible="not file_employer and not file_salarie">
+                        <group>
+                            <field name="file_employer" widget="binary"
+                                   filename="file_employer_name"
+                                   string="Entête Employeur"
+                                   readonly="1"/>
+                            <field name="file_employer_name" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="file_salarie" widget="binary"
+                                   filename="file_salarie_name"
+                                   string="Détail Salariés"
+                                   readonly="1"/>
+                            <field name="file_salarie_name" invisible="1"/>
+                        </group>
+                    </group>
+
+                    <!-- Lignes salariés -->
+                    <notebook>
+                        <page string="Salariés" name="lines">
+                            <field name="line_ids" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="employee_id" readonly="1"/>
+                                    <field name="matricule" readonly="1"/>
+                                    <field name="ssnid" readonly="1"
+                                           string="N° SS"
+                                           decoration-danger="not ssnid"/>
+                                    <field name="date_entree"/>
+                                    <field name="date_sortie"/>
+                                    <field name="unite_mesure" string="Unité"/>
+                                    <field name="duree_t1" string="Dur.T1" optional="show"/>
+                                    <field name="assiette_t1" string="Assiette T1"/>
+                                    <field name="duree_t2" string="Dur.T2" optional="show"/>
+                                    <field name="assiette_t2" string="Assiette T2"/>
+                                    <field name="duree_t3" string="Dur.T3" optional="show"/>
+                                    <field name="assiette_t3" string="Assiette T3"/>
+                                    <field name="duree_t4" string="Dur.T4" optional="show"/>
+                                    <field name="assiette_t4" string="Assiette T4"/>
+                                    <field name="total_annuel" readonly="1"
+                                           string="Total annuel" sum="Total général"/>
+                                    <field name="observation" string="Poste/Fonction" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Aide" name="help">
+                            <div class="alert alert-info" role="alert">
+                                <h5><i class="fa fa-info-circle me-2"/>Guide Tasrihatcom</h5>
+                                <ol>
+                                    <li>Renseignez l'<strong>année civile</strong> à déclarer.</li>
+                                    <li>Cliquez <strong>Charger les données</strong> — les lignes
+                                        sont calculées depuis vos bulletins confirmés.</li>
+                                    <li>Vérifiez chaque salarié :
+                                        <ul>
+                                            <li><em>N° SS</em> en rouge = NSS manquant sur la fiche
+                                                employé — à corriger avant génération
+                                                (doit faire exactement 12 chiffres).</li>
+                                            <li><em>Date de sortie</em> = laisser vide si encore
+                                                en poste au 31/12.</li>
+                                        </ul>
+                                    </li>
+                                    <li>Cliquez <strong>Générer les fichiers (.txt)</strong>.</li>
+                                    <li>Téléchargez les deux fichiers et importez-les sur
+                                        <strong>teledeclaration.cnas.dz</strong>.</li>
+                                </ol>
+                                <p class="text-muted mb-0">
+                                    Le N° Employeur et le Centre Payeur sont repris depuis
+                                    <strong>Paramètres &gt; Société &gt; Identifiants CNAS</strong>.
+                                    Échéance légale : <strong>31 janvier</strong> de l'année N+1.
+                                </p>
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         ACTIONS
+    ═══════════════════════════════════════════════════════════════════ -->
+    <record id="action_hr_dz_das" model="ir.actions.act_window">
+        <field name="name">DAS CNAS (Tasrihatcom)</field>
+        <field name="res_model">hr.dz.das</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créer une nouvelle Déclaration Annuelle des Salaires
+            </p>
+            <p>
+                Génère les fichiers <b>.txt</b> à largeur fixe pour la
+                télédéclaration CNAS (Tasrihatcom).
+            </p>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MENU
+    ═══════════════════════════════════════════════════════════════════ -->
+    <menuitem id="menu_hr_dz_das"
+              name="DAS CNAS (Tasrihatcom)"
+              action="action_hr_dz_das"
+              parent="hr_dz_payroll.menu_payroll_reports"
+              sequence="25"/>
+
+</odoo>

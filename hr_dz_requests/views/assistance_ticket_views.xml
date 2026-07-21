@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Extend formulaire ticket — boutons de validation + onglet "Demande RH"
+    ================================================================ -->
+    <record id="assistance_ticket_form_hr_request" model="ir.ui.view">
+        <field name="name">assistance.ticket.form.hr_request</field>
+        <field name="model">assistance.ticket</field>
+        <field name="inherit_id" ref="assistance.view_assistance_ticket_form"/>
+        <field name="arch" type="xml">
+
+            <!-- ── Boutons d'action dans le header ── -->
+            <xpath expr="//header" position="inside">
+
+                <!-- Envoyer au responsable (brouillon → en attente) -->
+                <button name="action_send_to_manager"
+                        string="Envoyer au responsable"
+                        type="object"
+                        class="btn-primary"
+                        invisible="not is_hr_request or hr_validation_state != 'draft'"/>
+
+                <!-- Responsable : Approuver -->
+                <button name="action_manager_approve"
+                        string="Approuver"
+                        type="object"
+                        class="btn-success"
+                        invisible="not is_hr_request or hr_validation_state != 'manager_pending'"/>
+
+                <!-- Responsable : Refuser -->
+                <button name="action_manager_refuse"
+                        string="Refuser"
+                        type="object"
+                        class="btn-danger"
+                        invisible="not is_hr_request or hr_validation_state != 'manager_pending'"/>
+
+                <!-- RH : Valider -->
+                <button name="action_hr_validate"
+                        string="Valider RH"
+                        type="object"
+                        class="btn-success"
+                        invisible="not is_hr_request or hr_validation_state != 'manager_approved'"/>
+
+                <!-- RH : Refuser -->
+                <button name="action_hr_refuse"
+                        string="Refus RH"
+                        type="object"
+                        class="btn-danger"
+                        invisible="not is_hr_request or hr_validation_state != 'manager_approved'"/>
+
+                <!-- Remettre en brouillon (après refus) -->
+                <button name="action_reset_to_draft"
+                        string="Remettre en brouillon"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="not is_hr_request or hr_validation_state not in ('manager_refused', 'hr_refused')"/>
+
+                <!-- Imprimer ordre de mission (MISSION + validé RH) -->
+                <button name="action_print_mission_order"
+                        string="Ordre de mission"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="not is_hr_request or hr_validation_state != 'hr_validated' or hr_request_type_code != 'MISSION'"/>
+
+                <!-- Imprimer bon de sortie (SORTIE + validé RH) -->
+                <button name="action_print_bon_sortie"
+                        string="Bon de sortie"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="not is_hr_request or hr_validation_state != 'hr_validated' or hr_request_type_code != 'SORTIE'"/>
+
+                <!-- Barre de statut validation (visible si demande RH) -->
+                <field name="hr_validation_state"
+                       widget="statusbar"
+                       statusbar_visible="draft,manager_pending,manager_approved,hr_validated"
+                       invisible="not is_hr_request"/>
+
+            </xpath>
+
+            <!-- ── Onglet Demande RH après l'onglet Description ── -->
+            <page name="description" position="after">
+                <page string="Demande RH" name="hr_request"
+                      invisible="not is_hr_request">
+
+                    <!-- Champs techniques invisibles pour les conditions -->
+                    <field name="hr_request_type_code" invisible="1"/>
+                    <field name="is_hr_request" invisible="1"/>
+
+                    <!-- Identification commune -->
+                    <group string="Identification">
+                        <group>
+                            <field name="hr_request_type_id"/>
+                            <field name="hr_employee_id"/>
+                        </group>
+                    </group>
+
+                    <!-- ══════════════════════════════════════
+                         ORDRE DE MISSION
+                    ══════════════════════════════════════ -->
+                    <group string="Ordre de mission"
+                           invisible="hr_request_type_code != 'MISSION'">
+                        <group>
+                            <field name="hr_destination"
+                                   required="hr_request_type_code == 'MISSION'"/>
+                            <field name="hr_transport_mode"/>
+                            <field name="hr_date_start" string="Date de départ"/>
+                            <field name="hr_date_end" string="Date de retour"/>
+                        </group>
+                        <group>
+                            <field name="hr_advance_amount"/>
+                            <field name="hr_companions" widget="text"/>
+                        </group>
+                        <separator string="Objet de la mission"/>
+                        <group>
+                            <field name="hr_mission_object" nolabel="1"
+                                   placeholder="But et contexte du déplacement…"/>
+                        </group>
+                    </group>
+
+                    <!-- ══════════════════════════════════════
+                         BON DE SORTIE
+                    ══════════════════════════════════════ -->
+                    <group string="Bon de sortie"
+                           invisible="hr_request_type_code != 'SORTIE'">
+                        <group>
+                            <field name="hr_date_start" string="Date de sortie"/>
+                            <field name="hr_departure_time" placeholder="HH:MM"/>
+                            <field name="hr_will_return" widget="radio"/>
+                            <field name="hr_return_time" placeholder="HH:MM"
+                                   invisible="hr_will_return == 'no'"/>
+                        </group>
+                        <group>
+                            <field name="hr_sortie_reason"/>
+                            <field name="hr_sortie_destination"/>
+                            <field name="hr_vehicle_requested"/>
+                        </group>
+                    </group>
+
+                    <!-- ══════════════════════════════════════
+                         DEMANDE DE CONGÉ
+                    ══════════════════════════════════════ -->
+                    <group name="hr_conge" string="Demande de congé"
+                           invisible="hr_request_type_code != 'CONGE'">
+                        <group>
+                            <field name="hr_date_start" string="Date de début"/>
+                            <field name="hr_date_end" string="Date de fin"/>
+                            <field name="hr_days_count" readonly="1"/>
+                            <field name="hr_leave_id" readonly="1"
+                                   invisible="not hr_leave_id"/>
+                        </group>
+                        <group>
+                            <field name="hr_leave_reason"/>
+                            <field name="hr_replacement_name"/>
+                        </group>
+
+                        <!-- Allocations + sélection — visible avant validation RH -->
+                        <group string="Imputation sur allocation" col="1"
+                               invisible="hr_validation_state in ('hr_validated', 'hr_refused')">
+                            <field name="hr_allocation_ids" readonly="1" nolabel="1">
+                                <list string="Allocations disponibles"
+                                      create="false" delete="false">
+                                    <field name="name" string="Allocation"/>
+                                    <field name="date_from" string="Depuis"/>
+                                    <field name="number_of_days" string="Alloués"/>
+                                    <field name="leaves_taken" string="Pris"/>
+                                    <field name="number_of_days_display" string="Restant"
+                                           decoration-danger="number_of_days_display == 0"
+                                           decoration-warning="number_of_days_display &lt; 5"/>
+                                </list>
+                            </field>
+                            <field name="hr_allocation_id" string="Imputer sur"
+                                   options="{'no_create': True}"
+                                   help="Laissez vide pour consommer la plus ancienne automatiquement."/>
+                            <field name="hr_leave_balance" readonly="1"
+                                   string="Solde allocation choisie"
+                                   invisible="not hr_allocation_id"/>
+                        </group>
+                    </group>
+
+                    <!-- Commentaire (tous types) -->
+                    <group string="Commentaire additionnel"
+                           invisible="not hr_justification">
+                        <field name="hr_justification" nolabel="1"/>
+                    </group>
+
+                    <!-- ══════════════════════════════════════
+                         VALIDATION
+                    ══════════════════════════════════════ -->
+                    <separator string="Validation" invisible="hr_validation_state == 'draft'"/>
+                    <group string="Informations de validation"
+                           invisible="hr_validation_state == 'draft'">
+                        <group>
+                            <field name="hr_manager_id" readonly="1"/>
+                            <field name="hr_manager_decision_date" readonly="1"
+                                   invisible="not hr_manager_decision_date"/>
+                        </group>
+                        <group>
+                            <field name="hr_validated_by" readonly="1"
+                                   invisible="not hr_validated_by"/>
+                            <field name="hr_validation_date" readonly="1"
+                                   invisible="not hr_validation_date"/>
+                        </group>
+                        <field name="hr_manager_note"
+                               invisible="not hr_manager_note"/>
+                    </group>
+
+                </page>
+            </page>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Extend liste ticket — colonne type RH (optionnelle)
+    ================================================================ -->
+    <record id="assistance_ticket_list_hr_request" model="ir.ui.view">
+        <field name="name">assistance.ticket.list.hr_request</field>
+        <field name="model">assistance.ticket</field>
+        <field name="inherit_id" ref="assistance.view_assistance_ticket_list"/>
+        <field name="arch" type="xml">
+            <field name="team_id" position="after">
+                <field name="hr_request_type_id" optional="hide" string="Type RH"/>
+                <field name="hr_validation_state" optional="hide" string="Validation"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Extend recherche — filtre + champ Demandes RH
+    ================================================================ -->
+    <record id="assistance_ticket_search_hr_request" model="ir.ui.view">
+        <field name="name">assistance.ticket.search.hr_request</field>
+        <field name="model">assistance.ticket</field>
+        <field name="inherit_id" ref="assistance.view_assistance_ticket_search"/>
+        <field name="arch" type="xml">
+            <filter name="open" position="before">
+                <filter name="hr_requests" string="Demandes RH"
+                        domain="[('is_hr_request', '=', True)]"/>
+                <filter name="hr_pending_validation" string="En attente de validation"
+                        domain="[('is_hr_request', '=', True), ('hr_validation_state', 'in', ('draft', 'manager_pending', 'manager_approved'))]"/>
+                <field name="hr_request_type_id" string="Type de demande"/>
+                <separator/>
+            </filter>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Action dédiée — vue Demandes RH (kanban + liste)
+    ================================================================ -->
+    <record id="action_assistance_ticket_hr_requests" model="ir.actions.act_window">
+        <field name="name">Demandes RH</field>
+        <field name="res_model">assistance.ticket</field>
+        <field name="view_mode">kanban,list,form,activity</field>
+        <field name="domain">[('is_hr_request', '=', True)]</field>
+        <field name="context">{'search_default_hr_requests': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucune demande RH pour l'instant.
+            </p>
+            <p>Les demandes RH soumises depuis le portail apparaîtront ici.</p>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Menu — Assistance → Demandes RH
+    ================================================================ -->
+    <menuitem id="menu_assistance_hr_requests"
+              name="Demandes RH"
+              parent="assistance.menu_assistance_root"
+              action="action_assistance_ticket_hr_requests"
+              sequence="5"/>
+
+</odoo>

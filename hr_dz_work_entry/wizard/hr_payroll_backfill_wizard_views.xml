@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_payroll_backfill_wizard_form" model="ir.ui.view">
+        <field name="name">hr.payroll.backfill.wizard.form</field>
+        <field name="model">hr.payroll.backfill.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Rattrapage pipeline paie">
+                <div class="alert alert-info" role="alert">
+                    <i class="fa fa-info-circle me-1"/>
+                    Ce wizard génère les <strong>work entries</strong>, valide les
+                    <strong>déductions retard</strong> (si activées) et crée les
+                    <strong>bulletins de paie brouillon</strong> pour chaque employé
+                    ayant des présences complètes, mois par mois depuis la date choisie.
+                </div>
+                <group>
+                    <field name="date_from"/>
+                    <field name="employee_ids" widget="many2many_tags"
+                           placeholder="Laisser vide pour tous les employés"/>
+                </group>
+                <footer>
+                    <button name="action_run" type="object"
+                            string="Lancer le rattrapage"
+                            class="btn-primary"
+                            data-hotkey="v"/>
+                    <button special="cancel" string="Annuler"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_payroll_backfill_wizard" model="ir.actions.act_window">
+        <field name="name">Rattrapage pipeline paie</field>
+        <field name="res_model">hr.payroll.backfill.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

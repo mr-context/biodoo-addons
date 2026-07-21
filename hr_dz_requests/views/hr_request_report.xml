@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Rapport QWeb — Ordre de mission
+         Disponible uniquement sur les tickets validés par RH
+         (hr_validation_state = 'hr_validated' et code = 'MISSION')
+    ================================================================ -->
+
+    <template id="report_mission_order_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+
+                        <!-- En-tête du document -->
+                        <div class="row mb-4">
+                            <div class="col-12 text-center">
+                                <h2 style="text-transform: uppercase; letter-spacing: 2px;">
+                                    Ordre de Mission
+                                </h2>
+                                <p class="text-muted">
+                                    N° <strong t-esc="doc.ticket_ref"/>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Méta : ref + date de validation -->
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <strong>Référence :</strong>
+                                <span t-esc="doc.ticket_ref"/>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>Date de validation :</strong>
+                                <span t-if="doc.hr_validation_date"
+                                      t-field="doc.hr_validation_date"
+                                      t-options='{"widget": "date", "format": "dd/MM/yyyy"}'/>
+                            </div>
+                        </div>
+
+                        <!-- Informations employé -->
+                        <table class="table table-bordered o_main_table">
+                            <thead>
+                                <tr style="background-color: #e9ecef;">
+                                    <th colspan="4">Informations de l'agent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="width:25%;"><strong>Nom et prénom</strong></td>
+                                    <td style="width:25%;" t-esc="doc.hr_employee_id.name or '—'"/>
+                                    <td style="width:25%;"><strong>Poste</strong></td>
+                                    <td style="width:25%;" t-esc="doc.hr_employee_id.job_id.name or '—'"/>
+                                </tr>
+                                <tr>
+                                    <td><strong>Direction / Service</strong></td>
+                                    <td t-esc="doc.hr_employee_id.department_id.name or '—'"/>
+                                    <td><strong>Responsable hiérarchique</strong></td>
+                                    <td t-esc="doc.hr_employee_id.parent_id.name or '—'"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Détails de la mission -->
+                        <table class="table table-bordered o_main_table mt-4">
+                            <thead>
+                                <tr style="background-color: #e9ecef;">
+                                    <th colspan="4">Détails de la mission</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="width:25%;"><strong>Destination</strong></td>
+                                    <td style="width:25%;" t-esc="doc.hr_destination or '—'"/>
+                                    <td style="width:25%;"><strong>Moyen de transport</strong></td>
+                                    <td style="width:25%;">
+                                        <t t-esc="dict(doc._fields['hr_transport_mode'].selection).get(doc.hr_transport_mode, '—')"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Date de départ</strong></td>
+                                    <td>
+                                        <t t-if="doc.hr_date_start">
+                                            <span t-field="doc.hr_date_start"
+                                                  t-options='{"widget": "date", "format": "dd/MM/yyyy"}'/>
+                                        </t>
+                                        <t t-else="">—</t>
+                                    </td>
+                                    <td><strong>Date de retour</strong></td>
+                                    <td>
+                                        <t t-if="doc.hr_date_end">
+                                            <span t-field="doc.hr_date_end"
+                                                  t-options='{"widget": "date", "format": "dd/MM/yyyy"}'/>
+                                        </t>
+                                        <t t-else="">—</t>
+                                    </td>
+                                </tr>
+                                <tr t-if="doc.hr_advance_amount">
+                                    <td><strong>Avance sur frais</strong></td>
+                                    <td colspan="3">
+                                        <span t-esc="'%.2f' % doc.hr_advance_amount"/> DA
+                                    </td>
+                                </tr>
+                                <tr t-if="doc.hr_companions">
+                                    <td><strong>Accompagnateurs</strong></td>
+                                    <td colspan="3" t-esc="doc.hr_companions"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Objet de la mission -->
+                        <div class="mt-4" t-if="doc.hr_mission_object">
+                            <strong>Objet de la mission :</strong>
+                            <p style="border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; margin-top: 6px;"
+                               t-esc="doc.hr_mission_object"/>
+                        </div>
+
+                        <!-- Validé par -->
+                        <div class="mt-3 text-muted" style="font-size: 0.85em;">
+                            <t t-if="doc.hr_validated_by">
+                                Validé par : <strong t-esc="doc.hr_validated_by.name"/>
+                            </t>
+                        </div>
+
+                        <!-- Zone de signatures -->
+                        <div class="row mt-5" style="margin-top: 60px !important;">
+                            <div class="col-4 text-center">
+                                <div style="margin-top: 70px; border-top: 1px solid #000; padding-top: 8px;">
+                                    <strong>L'intéressé(e)</strong><br/>
+                                    <small t-esc="doc.hr_employee_id.name or ''"/>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="margin-top: 70px; border-top: 1px solid #000; padding-top: 8px;">
+                                    <strong>Le responsable hiérarchique</strong><br/>
+                                    <small t-esc="doc.hr_employee_id.parent_id.name or ''"/>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="margin-top: 70px; border-top: 1px solid #000; padding-top: 8px;">
+                                    <strong>La Direction des Ressources Humaines</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- Action rapport Ordre de mission (pas de binding — bouton header uniquement) -->
+    <record id="report_mission_order" model="ir.actions.report">
+        <field name="name">Ordre de Mission</field>
+        <field name="model">assistance.ticket</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_dz_requests.report_mission_order_document</field>
+        <field name="report_file">hr_dz_requests.report_mission_order_document</field>
+        <field name="print_report_name">'Ordre_Mission_' + object.ticket_ref</field>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+
+    <!-- ================================================================
+         Rapport QWeb — Bon de sortie
+         Disponible uniquement sur les tickets SORTIE validés par RH
+    ================================================================ -->
+
+    <template id="report_bon_sortie_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+
+                        <!-- Titre -->
+                        <div class="row mb-4">
+                            <div class="col-12 text-center">
+                                <h2 style="text-transform: uppercase; letter-spacing: 2px;">
+                                    Bon de Sortie
+                                </h2>
+                                <p class="text-muted">
+                                    N° <strong t-esc="doc.ticket_ref"/>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Réf + Date de validation -->
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <strong>Référence :</strong>
+                                <span t-esc="doc.ticket_ref"/>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>Date de validation :</strong>
+                                <span t-if="doc.hr_validation_date"
+                                      t-field="doc.hr_validation_date"
+                                      t-options='{"widget": "date", "format": "dd/MM/yyyy"}'/>
+                                <t t-else="">—</t>
+                            </div>
+                        </div>
+
+                        <!-- Informations agent -->
+                        <table class="table table-bordered o_main_table">
+                            <thead>
+                                <tr style="background-color: #e9ecef;">
+                                    <th colspan="4">Informations de l'agent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="width:25%;"><strong>Nom et prénom</strong></td>
+                                    <td style="width:25%;" t-esc="doc.hr_employee_id.name or '—'"/>
+                                    <td style="width:25%;"><strong>Poste</strong></td>
+                                    <td style="width:25%;" t-esc="doc.hr_employee_id.job_id.name or '—'"/>
+                                </tr>
+                                <tr>
+                                    <td><strong>Direction / Service</strong></td>
+                                    <td t-esc="doc.hr_employee_id.department_id.name or '—'"/>
+                                    <td><strong>Responsable hiérarchique</strong></td>
+                                    <td t-esc="doc.hr_employee_id.parent_id.name or '—'"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Détails de la sortie -->
+                        <table class="table table-bordered o_main_table mt-4">
+                            <thead>
+                                <tr style="background-color: #e9ecef;">
+                                    <th colspan="4">Détails de la sortie</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="width:25%;"><strong>Motif</strong></td>
+                                    <td style="width:25%;">
+                                        <t t-esc="dict(doc._fields['hr_sortie_reason'].selection).get(doc.hr_sortie_reason, '—')"/>
+                                    </td>
+                                    <td style="width:25%;"><strong>Destination / Lieu</strong></td>
+                                    <td style="width:25%;" t-esc="doc.hr_sortie_destination or '—'"/>
+                                </tr>
+                                <tr>
+                                    <td><strong>Heure de départ</strong></td>
+                                    <td t-esc="doc.hr_departure_time or '—'"/>
+                                    <td><strong>Heure de retour prévue</strong></td>
+                                    <td t-esc="doc.hr_return_time or '—'"/>
+                                </tr>
+                                <tr>
+                                    <td><strong>Retour au poste</strong></td>
+                                    <td t-esc="dict(doc._fields['hr_will_return'].selection).get(doc.hr_will_return, '—')"/>
+                                    <td><strong>Véhicule de service</strong></td>
+                                    <td t-esc="'Oui' if doc.hr_vehicle_requested else 'Non'"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Validé par -->
+                        <div class="mt-3 text-muted" style="font-size: 0.85em;">
+                            <t t-if="doc.hr_validated_by">
+                                Validé par : <strong t-esc="doc.hr_validated_by.name"/>
+                            </t>
+                        </div>
+
+                        <!-- Zone de signatures -->
+                        <div class="row mt-5" style="margin-top: 60px !important;">
+                            <div class="col-4 text-center">
+                                <div style="margin-top: 70px; border-top: 1px solid #000; padding-top: 8px;">
+                                    <strong>L'intéressé(e)</strong><br/>
+                                    <small t-esc="doc.hr_employee_id.name or ''"/>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="margin-top: 70px; border-top: 1px solid #000; padding-top: 8px;">
+                                    <strong>Le responsable hiérarchique</strong><br/>
+                                    <small t-esc="doc.hr_employee_id.parent_id.name or ''"/>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="margin-top: 70px; border-top: 1px solid #000; padding-top: 8px;">
+                                    <strong>La Direction des Ressources Humaines</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- Action rapport Bon de sortie (pas de binding — bouton header uniquement) -->
+    <record id="report_bon_sortie" model="ir.actions.report">
+        <field name="name">Bon de Sortie</field>
+        <field name="model">assistance.ticket</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hr_dz_requests.report_bon_sortie_document</field>
+        <field name="report_file">hr_dz_requests.report_bon_sortie_document</field>
+        <field name="print_report_name">'Bon_Sortie_' + object.ticket_ref</field>
+        <field name="binding_model_id" eval="False"/>
+    </record>
+
+</odoo>

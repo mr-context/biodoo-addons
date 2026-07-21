@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="hr_dz_ocr.OcrProgressTerminal">
+        <div class="ocr-terminal">
+            <div class="ocr-terminal-header">
+                <i class="fa fa-terminal me-2"/>OCR Processing
+            </div>
+            <t t-foreach="state.messages" t-as="msg" t-key="msg_index">
+                <div t-attf-class="ocr-terminal-line #{msg.type === 'error' ? 'ocr-error' : ''} #{msg.type === 'success' ? 'ocr-success' : ''}">
+                    <span class="ocr-prefix">&gt;</span>
+                    <span t-esc="msg.text"/>
+                </div>
+            </t>
+            <div t-if="!state.done" class="ocr-terminal-line">
+                <span class="ocr-prefix">&gt;</span>
+                <span class="ocr-terminal-cursor"/>
+            </div>
+        </div>
+    </t>
+</templates>

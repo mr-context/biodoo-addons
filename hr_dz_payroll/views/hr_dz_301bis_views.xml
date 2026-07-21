@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============ 301bis Tree View ============ -->
+    <record id="hr_dz_301bis_view_tree" model="ir.ui.view">
+        <field name="name">hr.dz.301bis.tree</field>
+        <field name="model">hr.dz.301bis</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="year"/>
+                <field name="nbr_employees"/>
+                <field name="total_imposable" sum="Total"/>
+                <field name="total_irg" sum="Total"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ============ 301bis Form View ============ -->
+    <record id="hr_dz_301bis_view_form" model="ir.ui.view">
+        <field name="name">hr.dz.301bis.form</field>
+        <field name="model">hr.dz.301bis</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_load" type="object"
+                            string="Charger" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_confirm" type="object"
+                            string="Confirmer" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object"
+                            string="Remettre en brouillon"
+                            invisible="state != 'done'"/>
+                    <button name="action_print" type="object"
+                            string="Imprimer" class="btn-secondary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="year" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="nbr_employees"/>
+                            <field name="total_imposable"/>
+                            <field name="total_irg"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Employés">
+                            <field name="employee_ids" readonly="1">
+                                <list>
+                                    <field name="employee_id"/>
+                                    <field name="matricule" optional="show"/>
+                                    <field name="identification_id" optional="show"/>
+                                    <field name="base_01" string="Jan" optional="hide"/>
+                                    <field name="base_02" string="Fév" optional="hide"/>
+                                    <field name="base_03" string="Mar" optional="hide"/>
+                                    <field name="base_04" string="Avr" optional="hide"/>
+                                    <field name="base_05" string="Mai" optional="hide"/>
+                                    <field name="base_06" string="Jun" optional="hide"/>
+                                    <field name="base_07" string="Jul" optional="hide"/>
+                                    <field name="base_08" string="Aoû" optional="hide"/>
+                                    <field name="base_09" string="Sep" optional="hide"/>
+                                    <field name="base_10" string="Oct" optional="hide"/>
+                                    <field name="base_11" string="Nov" optional="hide"/>
+                                    <field name="base_12" string="Déc" optional="hide"/>
+                                    <field name="total_imp" sum="Total"/>
+                                    <field name="total_irg" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============ 301bis Employee Form (popup) ============ -->
+    <record id="hr_dz_301bis_employee_view_form" model="ir.ui.view">
+        <field name="name">hr.dz.301bis.employee.form</field>
+        <field name="model">hr.dz.301bis.employee</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="employee_id" readonly="1"/>
+                            <field name="matricule"/>
+                            <field name="identification_id"/>
+                            <field name="birthday"/>
+                        </group>
+                        <group>
+                            <field name="total_imp"/>
+                            <field name="total_irg"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Base imposable par mois">
+                            <group>
+                                <group>
+                                    <field name="base_01" string="Janvier"/>
+                                    <field name="base_02" string="Février"/>
+                                    <field name="base_03" string="Mars"/>
+                                    <field name="base_04" string="Avril"/>
+                                    <field name="base_05" string="Mai"/>
+                                    <field name="base_06" string="Juin"/>
+                                </group>
+                                <group>
+                                    <field name="base_07" string="Juillet"/>
+                                    <field name="base_08" string="Août"/>
+                                    <field name="base_09" string="Septembre"/>
+                                    <field name="base_10" string="Octobre"/>
+                                    <field name="base_11" string="Novembre"/>
+                                    <field name="base_12" string="Décembre"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="IRG retenu par mois">
+                            <group>
+                                <group>
+                                    <field name="irg_01" string="Janvier"/>
+                                    <field name="irg_02" string="Février"/>
+                                    <field name="irg_03" string="Mars"/>
+                                    <field name="irg_04" string="Avril"/>
+                                    <field name="irg_05" string="Mai"/>
+                                    <field name="irg_06" string="Juin"/>
+                                </group>
+                                <group>
+                                    <field name="irg_07" string="Juillet"/>
+                                    <field name="irg_08" string="Août"/>
+                                    <field name="irg_09" string="Septembre"/>
+                                    <field name="irg_10" string="Octobre"/>
+                                    <field name="irg_11" string="Novembre"/>
+                                    <field name="irg_12" string="Décembre"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============ 301bis Search View ============ -->
+    <record id="hr_dz_301bis_view_search" model="ir.ui.view">
+        <field name="name">hr.dz.301bis.search</field>
+        <field name="model">hr.dz.301bis</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="year"/>
+                <field name="name"/>
+                <separator/>
+                <filter name="draft" string="Brouillon" domain="[('state', '=', 'draft')]"/>
+                <filter name="done" string="Confirmé" domain="[('state', '=', 'done')]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ============ 301bis Action ============ -->
+    <record id="hr_dz_301bis_action" model="ir.actions.act_window">
+        <field name="name">État 301 Bis (Relevé des Émoluments)</field>
+        <field name="res_model">hr.dz.301bis</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créez votre premier État 301 Bis
+            </p>
+            <p>
+                Le Relevé des Émoluments (301 bis / G29) est la déclaration fiscale annuelle DGI
+                listant tous les employés avec base imposable et IRG retenu par mois.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============ Menu ============ -->
+    <menuitem id="menu_hr_dz_301bis"
+              name="État 301 Bis (Relevé des Émoluments)"
+              action="hr_dz_301bis_action"
+              parent="menu_payroll_reports"
+              sequence="20"/>
+
+</odoo>

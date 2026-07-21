@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Extend formulaire hr.leave — champ demande RH portail + bouton impression
+    ================================================================ -->
+    <record id="hr_leave_form_portal_link" model="ir.ui.view">
+        <field name="name">hr.leave.form.portal.link</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Bouton Titre de congé dans le header (validé uniquement) -->
+            <xpath expr="//header" position="inside">
+                <button name="action_print_leave_certificate"
+                        string="Titre de congé"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="state != 'validate'"/>
+            </xpath>
+
+            <!-- Champ demande portail après le type de congé -->
+            <xpath expr="//field[@name='holiday_status_id']" position="after">
+                <field name="ticket_id"
+                       readonly="state not in ('draft', 'confirm')"/>
+            </xpath>
+
+        </field>
+    </record>
+
+
+</odoo>

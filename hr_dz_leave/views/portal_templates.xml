@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         /my/attendances — ajout des cartes "Solde congés" et "Congés pris"
+    ================================================================ -->
+    <template id="portal_attendances_leave_dz"
+              name="Portail : solde congés DZ"
+              inherit_id="hr_employee_portal.portal_my_attendances">
+
+        <xpath expr="//div[hasclass('row') and hasclass('g-2') and hasclass('mb-3')]"
+               position="inside">
+
+            <t t-set="dz_lt" t-value="request.env.ref(
+                'hr_dz_leave.leave_type_annual_dz', raise_if_not_found=False)"/>
+            <t t-if="dz_lt and employee">
+                <t t-set="lt" t-value="dz_lt.sudo().with_context(employee_id=employee.id)"/>
+
+                <!-- Solde congés -->
+                <div class="col-6 col-md-3">
+                    <div class="card text-center p-2">
+                        <div class="fs-4 fw-bold text-warning">
+                            <t t-esc="'%.1f' % lt.virtual_remaining_leaves"/> j
+                        </div>
+                        <div class="text-muted small">Solde congés</div>
+                        <div style="font-size:.72rem;" class="text-muted">
+                            Alloués : <t t-esc="'%.1f' % lt.max_leaves"/> j
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jours pris -->
+                <div class="col-6 col-md-3">
+                    <div class="card text-center p-2">
+                        <div class="fs-4 fw-bold text-danger">
+                            <t t-esc="'%.1f' % lt.leaves_taken"/> j
+                        </div>
+                        <div class="text-muted small">Congés pris</div>
+                    </div>
+                </div>
+            </t>
+
+        </xpath>
+    </template>
+
+</odoo>

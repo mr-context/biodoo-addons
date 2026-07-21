@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_hr_prime_import_wizard_form" model="ir.ui.view">
+        <field name="name">hr.prime.import.wizard.form</field>
+        <field name="model">hr.prime.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importer des primes">
+                <group>
+                    <field name="campaign_id" invisible="context.get('default_campaign_id')"/>
+                </group>
+                <group string="1. Télécharger le modèle">
+                    <div>
+                        <button name="action_download_template" string="Télécharger le modèle Excel"
+                                type="object" class="btn-secondary" icon="fa-download"/>
+                    </div>
+                    <field name="template_file" filename="template_filename"
+                           invisible="not template_file" widget="binary"/>
+                    <field name="template_filename" invisible="1"/>
+                </group>
+                <group string="2. Importer le fichier complété">
+                    <field name="file" filename="filename"/>
+                    <field name="filename" invisible="1"/>
+                </group>
+                <div role="alert" class="alert alert-info">
+                    <strong>Format :</strong> fichier Excel (.xlsx) — 4 colonnes :
+                    <strong>Matricule</strong>, Nom (informatif), Département (informatif), <strong>Montant</strong>.
+                    Seuls le matricule et le montant sont utilisés. Les lignes avec montant à 0 sont ignorées.
+                </div>
+                <footer>
+                    <button name="action_import" string="Importer" type="object" class="btn-primary"
+                            icon="fa-upload"/>
+                    <button string="Fermer" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_prime_import_wizard" model="ir.actions.act_window">
+        <field name="name">Importer des primes</field>
+        <field name="res_model">hr.prime.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_campaign_id': active_id}</field>
+    </record>
+
+</odoo>

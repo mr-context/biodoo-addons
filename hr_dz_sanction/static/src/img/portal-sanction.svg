@@ -1,0 +1,34 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shadow ellipse -->
+  <ellipse cx="32" cy="58" rx="19" ry="4" fill="#C1DBF6"/>
+  <!-- Document body -->
+  <rect x="10" y="5" width="39" height="50" rx="3" fill="white"/>
+  <!-- Header band (navy — official/serious) -->
+  <path d="M10 8C10 6.3 11.3 5 13 5H46C47.7 5 49 6.3 49 8V18H10V8Z" fill="#374874"/>
+  <!-- Header: person silhouette (same idiom as payslip) -->
+  <circle cx="29.5" cy="10.5" r="3" fill="white" opacity="0.9"/>
+  <path d="M23 18C23 15.2 36 15.2 36 18" fill="white" opacity="0.9"/>
+  <!-- Divider lines between rows -->
+  <line x1="10" y1="30" x2="49" y2="30" stroke="#C1DBF6" stroke-width="1"/>
+  <line x1="10" y1="38" x2="49" y2="38" stroke="#C1DBF6" stroke-width="1"/>
+  <!-- Row 1 label + value -->
+  <rect x="15" y="22" width="14" height="2" rx="1" fill="#374874" opacity="0.5"/>
+  <rect x="37" y="22" width="8" height="2" rx="1" fill="#374874"/>
+  <!-- Row 2 -->
+  <rect x="15" y="33" width="18" height="2" rx="1" fill="#374874" opacity="0.5"/>
+  <rect x="37" y="33" width="8" height="2" rx="1" fill="#374874"/>
+  <!-- Footer band (red-tinted — discipline) -->
+  <path d="M10 44H49V52C49 53.7 47.7 55 46 55H13C11.3 55 10 53.7 10 52V44Z" fill="#FBDBD0"/>
+  <rect x="15" y="48" width="10" height="2.5" rx="1" fill="#374874" opacity="0.6"/>
+  <rect x="35" y="47.5" width="10" height="3" rx="1.5" fill="#C0392B"/>
+  <!-- Document outline -->
+  <rect x="10" y="5" width="39" height="50" rx="3" stroke="#374874" stroke-width="1.5"/>
+  <!-- Red circular stamp (official decision seal) — bottom-right corner -->
+  <circle cx="46" cy="45" r="12" fill="#C0392B"/>
+  <circle cx="46" cy="45" r="9.5" fill="none" stroke="white" stroke-width="1.2"/>
+  <!-- Gavel inside stamp:
+       handle going ↗ (41,50)→(49,42) and head going ↘ (45,38)→(53,46)
+       perpendicular lines meeting at (49,42) — midpoint of head -->
+  <line x1="41" y1="50" x2="49" y2="42" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <line x1="45" y1="38" x2="53" y2="46" stroke="white" stroke-width="4" stroke-linecap="round"/>
+</svg>

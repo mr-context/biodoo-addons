@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Menu Prestations dans Paie - pointe vers la liste -->
+    <menuitem
+        id="menu_hr_work_entry_root"
+        name="Prestations"
+        parent="payroll.payroll_menu_root"
+        action="hr_work_entry_action_payroll"
+        sequence="5"
+        groups="hr.group_hr_user"/>
+
+    <!-- Menu Anomalies séparé -->
+    <menuitem
+        id="menu_hr_work_entry_anomalies"
+        name="Anomalies"
+        parent="payroll.payroll_menu_root"
+        action="hr_work_entry_anomaly_action"
+        sequence="6"
+        groups="hr.group_hr_user"/>
+
+    <!-- Types de prestations dans Configuration -->
+    <menuitem
+        id="menu_hr_work_entry_type"
+        name="Types de prestations"
+        parent="payroll.payroll_menu_configuration"
+        action="hr_work_entry.hr_work_entry_type_action"
+        sequence="30"
+        groups="hr.group_hr_manager"/>
+
+</odoo>

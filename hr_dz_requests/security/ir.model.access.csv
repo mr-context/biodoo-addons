@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_request_type_user,hr.request.type utilisateur,model_hr_request_type,assistance.group_user,1,0,0,0
+access_hr_request_type_manager,hr.request.type responsable,model_hr_request_type,assistance.group_manager,1,1,1,1
+access_hr_request_type_portal,hr.request.type portail,model_hr_request_type,base.group_portal,1,0,0,0

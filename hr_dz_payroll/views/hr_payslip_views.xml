@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extension du formulaire hr.payslip -->
+    <record id="hr_payslip_view_form_inherit_dz" model="ir.ui.view">
+        <field name="name">hr.payslip.form.inherit.dz</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="payroll.hr_payslip_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Bouton pour charger depuis les prestations -->
+            <button name="compute_sheet" position="before">
+                <button name="action_load_from_work_entries"
+                    type="object"
+                    string="Charger prestations"
+                    class="btn-secondary"
+                    invisible="state not in ('draft', 'verify')"
+                    confirm="Charger les worked days depuis les prestations? Les lignes existantes seront remplacées."/>
+            </button>
+
+            <!-- Bouton pour voir les prestations -->
+            <button name="action_payslip_cancel" position="after">
+                <button name="action_view_work_entries"
+                    type="object"
+                    string="Voir prestations"
+                    class="btn-link"/>
+            </button>
+
+            <!-- Champ caché pour tracking -->
+            <field name="credit_note" position="after">
+                <field name="work_entries_generated" invisible="1"/>
+            </field>
+
+            <!-- Ajouter un onglet Prestations dans le notebook -->
+            <page name="accounting" position="after">
+                <page name="work_entries" string="Prestations">
+                    <group>
+                        <group string="Résumé des prestations">
+                            <field name="work_entry_summary" readonly="1" nolabel="1" widget="text"/>
+                        </group>
+                    </group>
+                    <group>
+                        <button name="action_view_work_entries"
+                            type="object"
+                            string="Voir les prestations détaillées"
+                            class="btn-primary"/>
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+
+    <!-- Vue Pivot hr.payslip -->
+    <record id="hr_payslip_view_pivot_dz" model="ir.ui.view">
+        <field name="name">hr.payslip.pivot.dz</field>
+        <field name="model">hr.payslip</field>
+        <field name="arch" type="xml">
+            <pivot string="Bulletins de paie">
+                <field name="employee_id" type="row"/>
+                <field name="date_from" interval="month" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Override action principale : ajouter pivot -->
+    <record id="payroll.hr_payslip_action" model="ir.actions.act_window">
+        <field name="view_mode">list,pivot,kanban,form</field>
+    </record>
+
+    <!-- Extension de la vue liste -->
+    <record id="hr_payslip_view_tree_inherit_dz" model="ir.ui.view">
+        <field name="name">hr.payslip.tree.inherit.dz</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="payroll.hr_payslip_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="state" position="before">
+                <field name="work_entries_generated" column_invisible="1"/>
+                <button name="action_load_from_work_entries"
+                    type="object"
+                    icon="fa-download"
+                    class="text-info"
+                    invisible="work_entries_generated or state not in ('draft', 'verify')"
+                    title="Charger prestations"/>
+            </field>
+        </field>
+    </record>
+</odoo>

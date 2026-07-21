@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         assistance.tag — liste inline
+    ================================================================ -->
+    <record id="view_assistance_tag_list" model="ir.ui.view">
+        <field name="name">assistance.tag.list</field>
+        <field name="model">assistance.tag</field>
+        <field name="arch" type="xml">
+            <list string="Étiquettes" editable="top">
+                <field name="name"/>
+                <field name="color" widget="color_picker"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_assistance_tag" model="ir.actions.act_window">
+        <field name="name">Étiquettes</field>
+        <field name="res_model">assistance.tag</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- ================================================================
+         assistance.ticket — ACTIVITÉ
+    ================================================================ -->
+    <record id="view_assistance_ticket_activity" model="ir.ui.view">
+        <field name="name">assistance.ticket.activity</field>
+        <field name="model">assistance.ticket</field>
+        <field name="arch" type="xml">
+            <activity string="Tickets d'assistance">
+                <field name="ticket_ref"/>
+                <field name="user_id"/>
+                <templates>
+                    <div t-name="activity-box">
+                        <img t-att-src="activity_image('res.users', 'avatar_128', record.user_id.raw_value)"
+                             t-att-alt="record.user_id.value"
+                             t-att-title="record.user_id.value" class="o_activity_avatar_img rounded-circle me-2"/>
+                        <div class="o_activity_name">
+                            <b><field name="name"/></b>
+                            <span t-if="record.ticket_ref.raw_value" class="text-muted">
+                                [<t t-esc="record.ticket_ref.value"/>]
+                            </span>
+                        </div>
+                    </div>
+                </templates>
+            </activity>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         assistance.ticket — KANBAN
+    ================================================================ -->
+    <record id="view_assistance_ticket_kanban" model="ir.ui.view">
+        <field name="name">assistance.ticket.kanban</field>
+        <field name="model">assistance.ticket</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="stage_id" quick_create="true"
+                    on_create="quick_create"
+                    class="o_kanban_small_column">
+                <field name="stage_id"/>
+                <field name="priority"/>
+                <field name="kanban_state"/>
+                <field name="user_id"/>
+                <field name="tag_ids"/>
+                <field name="color"/>
+                <field name="activity_ids"/>
+                <field name="activity_state"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="priority" widget="priority" class="float-start me-1"/>
+                        <field name="name" class="fw-bold"/>
+                        <div class="o_kanban_record_bottom mt-2">
+                            <div class="o_kanban_record_headings">
+                                <field name="team_id" class="text-muted small"/>
+                            </div>
+                            <div class="o_kanban_manage_button_section">
+                                <field name="tag_ids" widget="many2many_tags"
+                                       options="{'color_field': 'color'}"/>
+                                <field name="activity_ids" widget="kanban_activity"
+                                       class="ms-1"/>
+                                <field name="user_id" widget="many2one_avatar_user"
+                                       class="ms-1"/>
+                                <field name="kanban_state" widget="state_selection"
+                                       class="ms-1"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         assistance.ticket — LISTE
+    ================================================================ -->
+    <record id="view_assistance_ticket_list" model="ir.ui.view">
+        <field name="name">assistance.ticket.list</field>
+        <field name="model">assistance.ticket</field>
+        <field name="arch" type="xml">
+            <list string="Tickets" multi_edit="1">
+                <field name="ticket_ref" string="Réf." optional="show"/>
+                <field name="name" string="Sujet"/>
+                <field name="team_id" optional="show"/>
+                <field name="user_id" optional="show" widget="many2one_avatar_user"/>
+                <field name="stage_id" optional="show" widget="badge"/>
+                <field name="priority" widget="priority" optional="show"/>
+                <field name="activity_ids" widget="list_activity" optional="show"/>
+                <field name="kanban_state" widget="state_selection" optional="hide"/>
+                <field name="create_date" string="Créé le" optional="show"/>
+                <field name="close_date" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         assistance.ticket — FORMULAIRE
+    ================================================================ -->
+    <record id="view_assistance_ticket_form" model="ir.ui.view">
+        <field name="name">assistance.ticket.form</field>
+        <field name="model">assistance.ticket</field>
+        <field name="arch" type="xml">
+            <form string="Ticket">
+                <header>
+                    <field name="stage_id" widget="statusbar"
+                           options="{'clickable': '1'}"/>
+                    <button name="action_mark_resolved"
+                            string="Marquer résolu"
+                            type="object"
+                            class="btn-primary"
+                            invisible="stage_id.is_closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="Sujet du ticket…"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="ticket_ref" readonly="1"/>
+                            <field name="team_id"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="partner_id"/>
+                        </group>
+                        <group>
+                            <field name="priority" widget="priority"/>
+                            <field name="kanban_state" widget="state_selection"/>
+                            <field name="tag_ids" widget="many2many_tags"
+                                   options="{'color_field': 'color'}"/>
+                            <field name="close_date" invisible="not close_date"/>
+                            <field name="closed_by_partner" invisible="not closed_by_partner"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description" name="description">
+                            <field name="description" placeholder="Décrivez le problème ou la demande…"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         assistance.ticket — RECHERCHE
+    ================================================================ -->
+    <record id="view_assistance_ticket_search" model="ir.ui.view">
+        <field name="name">assistance.ticket.search</field>
+        <field name="model">assistance.ticket</field>
+        <field name="arch" type="xml">
+            <search string="Tickets">
+                <field name="name" string="Sujet / Réf."
+                       filter_domain="['|', ('name', 'ilike', self), ('ticket_ref', 'ilike', self)]"/>
+                <field name="team_id"/>
+                <field name="user_id"/>
+                <field name="stage_id"/>
+                <field name="tag_ids"/>
+                <separator/>
+                <filter name="my_tickets" string="Mes tickets"
+                        domain="[('user_id', '=', uid)]"/>
+                <filter name="open" string="Ouverts"
+                        domain="[('close_date', '=', False)]"/>
+                <filter name="closed" string="Résolus"
+                        domain="[('close_date', '!=', False)]"/>
+                <filter name="urgent" string="Urgents"
+                        domain="[('priority', '=', '1')]"/>
+                <separator/>
+                <filter name="activities_overdue" string="Activités en retard"
+                        domain="[('my_activity_date_deadline', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="activities_today" string="Activités aujourd'hui"
+                        domain="[('my_activity_date_deadline', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="activities_upcoming" string="Activités à venir"
+                        domain="[('my_activity_date_deadline', '&gt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <filter name="inactive" string="Archivés"
+                        domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_team" string="Équipe"
+                            context="{'group_by': 'team_id'}"/>
+                    <filter name="group_stage" string="Étape"
+                            context="{'group_by': 'stage_id'}"/>
+                    <filter name="group_user" string="Assigné"
+                            context="{'group_by': 'user_id'}"/>
+                    <filter name="group_priority" string="Priorité"
+                            context="{'group_by': 'priority'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Actions
+    ================================================================ -->
+    <record id="action_assistance_ticket_all" model="ir.actions.act_window">
+        <field name="name">Tous les tickets</field>
+        <field name="res_model">assistance.ticket</field>
+        <field name="view_mode">kanban,list,form,activity</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucun ticket pour l'instant !
+            </p>
+            <p>Créez votre premier ticket d'assistance.</p>
+        </field>
+    </record>
+
+    <record id="action_assistance_ticket_mine" model="ir.actions.act_window">
+        <field name="name">Mes tickets</field>
+        <field name="res_model">assistance.ticket</field>
+        <field name="view_mode">kanban,list,form,activity</field>
+        <field name="domain">[('user_id', '=', uid)]</field>
+        <field name="context">{'default_user_id': uid, 'search_default_my_tickets': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aucun ticket qui vous est assigné.
+            </p>
+        </field>
+    </record>
+
+</odoo>

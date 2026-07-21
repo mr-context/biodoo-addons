@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_hr_dz_recap_paie_wizard" model="ir.actions.act_window">
+        <field name="name">Récapitulatif de Paie Mensuel</field>
+        <field name="res_model">hr.dz.recap.paie.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="view_hr_dz_recap_paie_wizard_form" model="ir.ui.view">
+        <field name="name">hr.dz.recap.paie.wizard.form</field>
+        <field name="model">hr.dz.recap.paie.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Récapitulatif de Paie Mensuel">
+                <group>
+                    <field name="month"/>
+                    <field name="year"/>
+                </group>
+                <footer>
+                    <button name="action_print" type="object"
+                            string="Imprimer" class="btn-primary"/>
+                    <button string="Annuler" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <menuitem id="menu_hr_dz_recap_paie"
+              name="Récapitulatif de Paie Mensuel"
+              parent="menu_payroll_reports"
+              action="action_hr_dz_recap_paie_wizard"
+              sequence="25"/>
+
+</odoo>

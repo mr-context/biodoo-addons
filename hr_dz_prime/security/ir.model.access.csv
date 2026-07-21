@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_prime_campaign_manager,hr.prime.campaign.manager,model_hr_prime_campaign,hr.group_hr_manager,1,1,1,1
+access_hr_prime_campaign_user,hr.prime.campaign.user,model_hr_prime_campaign,hr.group_hr_user,1,0,0,0
+access_hr_prime_line_manager,hr.prime.line.manager,model_hr_prime_line,hr.group_hr_manager,1,1,1,1
+access_hr_prime_line_user,hr.prime.line.user,model_hr_prime_line,hr.group_hr_user,1,0,0,0
+access_hr_prime_import_wizard,hr.prime.import.wizard,model_hr_prime_import_wizard,hr.group_hr_manager,1,1,1,1

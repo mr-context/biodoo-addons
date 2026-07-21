@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Vue liste
+    ================================================================ -->
+    <record id="view_hr_sanction_list" model="ir.ui.view">
+        <field name="name">hr.sanction.list</field>
+        <field name="model">hr.sanction</field>
+        <field name="arch" type="xml">
+            <list string="Procédures disciplinaires"
+                  decoration-muted="state == 'cancel'"
+                  decoration-warning="state in ('convoque', 'audition')"
+                  decoration-success="state == 'done'">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="department_id" optional="show"/>
+                <field name="date_incident"/>
+                <field name="fault_id"/>
+                <field name="degree"/>
+                <field name="sanction_type_id" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-muted="state == 'draft'"
+                       decoration-warning="state in ('convoque', 'audition')"
+                       decoration-info="state == 'decide'"
+                       decoration-primary="state == 'notifie'"
+                       decoration-success="state == 'done'"
+                       decoration-danger="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Vue formulaire
+    ================================================================ -->
+    <record id="view_hr_sanction_form" model="ir.ui.view">
+        <field name="name">hr.sanction.form</field>
+        <field name="model">hr.sanction</field>
+        <field name="arch" type="xml">
+            <form string="Procédure disciplinaire">
+                <header>
+                    <!-- Boutons workflow -->
+                    <button name="action_convoquer"
+                            string="Envoyer convocation"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"
+                            confirm="Confirmer l'envoi de la convocation à l'employé ?"/>
+                    <button name="action_audition"
+                            string="Ouvrir l'audition"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'convoque'"
+                            confirm="Confirmer l'ouverture de la phase d'audition ?"/>
+                    <button name="action_decider"
+                            string="Rendre la décision"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'audition'"
+                            confirm="Confirmer la décision de sanction ?"/>
+                    <button name="action_notifier"
+                            string="Notifier l'employé"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'decide'"
+                            confirm="Confirmer la notification de l'employé ?"/>
+                    <button name="action_done"
+                            string="Clôturer"
+                            type="object"
+                            invisible="state != 'notifie'"
+                            confirm="Clôturer définitivement cette procédure ?"/>
+
+                    <!-- Impressions -->
+                    <button name="action_print_convocation"
+                            string="Imprimer convocation"
+                            type="object"
+                            invisible="state not in ('convoque', 'audition', 'decide', 'notifie', 'done')"/>
+                    <button name="action_print_decision"
+                            string="Imprimer décision"
+                            type="object"
+                            invisible="state not in ('decide', 'notifie', 'done')"/>
+
+                    <!-- Annulation / Reset -->
+                    <button name="action_cancel"
+                            string="Annuler"
+                            type="object"
+                            invisible="state in ('done', 'cancel')"
+                            confirm="Annuler cette procédure disciplinaire ?"/>
+                    <button name="action_reset_draft"
+                            string="Réinitialiser"
+                            type="object"
+                            invisible="state != 'cancel'"/>
+
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,convoque,audition,decide,notifie,done"/>
+                </header>
+
+                <sheet>
+                    <!-- Titre -->
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+
+                    <!-- Infos principales -->
+                    <group>
+                        <group string="Employé">
+                            <field name="employee_id"
+                                   readonly="state != 'draft'"
+                                   options="{'no_create': True}"/>
+                            <field name="job_id"/>
+                            <field name="department_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Document">
+                            <field name="user_id"/>
+                            <field name="date_incident"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <!-- ── Onglet 1 : Incident ── -->
+                        <page string="Incident" name="incident">
+                            <group>
+                                <group>
+                                    <field name="fault_id"
+                                           readonly="state != 'draft'"
+                                           options="{'no_create': True}"/>
+                                    <field name="degree"/>
+                                </group>
+                            </group>
+                            <field name="incident_description"
+                                   readonly="state != 'draft'"
+                                   placeholder="Décrire précisément les faits reprochés…"
+                                   widget="html"/>
+                        </page>
+
+                        <!-- ── Onglet 2 : Convocation ── -->
+                        <page string="Convocation" name="convocation">
+                            <group>
+                                <group>
+                                    <field name="date_convocation"
+                                           readonly="state not in ('draft', 'convoque')"/>
+                                    <field name="audition_date_planned"
+                                           readonly="state not in ('draft', 'convoque')"/>
+                                </group>
+                            </group>
+                            <field name="convocation_note"
+                                   readonly="state not in ('draft', 'convoque')"
+                                   placeholder="Objet de la convocation, faits reprochés à mentionner…"
+                                   widget="html"/>
+                        </page>
+
+                        <!-- ── Onglet 3 : Audition (PV) ── -->
+                        <page string="Audition / PV" name="audition">
+                            <group>
+                                <group>
+                                    <field name="date_audition"
+                                           readonly="state not in ('convoque', 'audition')"/>
+                                </group>
+                            </group>
+                            <group string="Déclaration de l'employé">
+                                <field name="employee_response"
+                                       nolabel="1"
+                                       readonly="state not in ('audition',)"
+                                       placeholder="Déclaration de l'employé lors de l'audition…"
+                                       widget="html"/>
+                            </group>
+                            <group string="Observations de la commission">
+                                <field name="audition_observations"
+                                       nolabel="1"
+                                       readonly="state not in ('audition',)"
+                                       placeholder="Conclusions de la commission disciplinaire…"
+                                       widget="html"/>
+                            </group>
+                        </page>
+
+                        <!-- ── Onglet 4 : Décision ── -->
+                        <page string="Décision" name="decision">
+                            <group>
+                                <group>
+                                    <field name="sanction_type_id"
+                                           readonly="state not in ('audition',)"
+                                           options="{'no_create': True}"
+                                           domain="[('degree', '=', degree)]"/>
+                                    <field name="date_decision"
+                                           readonly="state not in ('audition',)"/>
+                                    <field name="date_effet"
+                                           readonly="state not in ('audition',)"/>
+                                </group>
+                                <group>
+                                    <field name="date_notification"
+                                           readonly="state not in ('decide',)"/>
+                                </group>
+                            </group>
+                            <group string="Motifs de la décision">
+                                <field name="decision_note"
+                                       nolabel="1"
+                                       readonly="state not in ('audition',)"
+                                       placeholder="Exposé des motifs justifiant la sanction…"
+                                       widget="html"/>
+                            </group>
+                        </page>
+
+                    </notebook>
+                </sheet>
+
+                <!-- Chatter -->
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Vue recherche
+    ================================================================ -->
+    <record id="view_hr_sanction_search" model="ir.ui.view">
+        <field name="name">hr.sanction.search</field>
+        <field name="model">hr.sanction</field>
+        <field name="arch" type="xml">
+            <search string="Sanctions disciplinaires">
+                <field name="employee_id"/>
+                <field name="fault_id"/>
+                <field name="sanction_type_id"/>
+                <field name="name"/>
+
+                <filter name="draft"    string="Nouveaux"         domain="[('state', '=', 'draft')]"/>
+                <filter name="convoque" string="Convoqués"        domain="[('state', '=', 'convoque')]"/>
+                <filter name="audition" string="En audition"      domain="[('state', '=', 'audition')]"/>
+                <filter name="decide"   string="Décision rendue"  domain="[('state', '=', 'decide')]"/>
+                <filter name="notifie"  string="Notifiés"         domain="[('state', '=', 'notifie')]"/>
+                <filter name="done"     string="Terminés"         domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter name="cancel"   string="Annulés"          domain="[('state', '=', 'cancel')]"/>
+
+                <group>
+                    <filter name="group_employee"   string="Employé"    context="{'group_by': 'employee_id'}"/>
+                    <filter name="group_degree"     string="Degré"      context="{'group_by': 'degree'}"/>
+                    <filter name="group_state"      string="État"       context="{'group_by': 'state'}"/>
+                    <filter name="group_department" string="Département" context="{'group_by': 'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Action principale + Menus
+    ================================================================ -->
+    <record id="action_hr_sanction" model="ir.actions.act_window">
+        <field name="name">Procédures disciplinaires</field>
+        <field name="res_model">hr.sanction</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_hr_sanction_search"/>
+        <field name="context">{'search_default_draft': 0}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Créer une nouvelle procédure disciplinaire
+            </p>
+            <p>
+                Workflow : Incident → Convocation → Audition → Décision → Notification
+            </p>
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_hr_sanction_root"
+        name="Sanctions disciplinaires"
+        parent="hr.menu_hr_root"
+        sequence="90"/>
+
+    <menuitem
+        id="menu_hr_sanction_list"
+        name="Procédures disciplinaires"
+        parent="menu_hr_sanction_root"
+        action="action_hr_sanction"
+        sequence="10"/>
+
+</odoo>

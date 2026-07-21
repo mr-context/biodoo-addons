@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_ticket_user,assistance.ticket utilisateur,model_assistance_ticket,assistance.group_user,1,1,1,0
+access_ticket_manager,assistance.ticket responsable,model_assistance_ticket,assistance.group_manager,1,1,1,1
+access_ticket_portal,assistance.ticket portail,model_assistance_ticket,base.group_portal,1,0,0,0
+access_team_user,assistance.team utilisateur,model_assistance_team,assistance.group_user,1,0,0,0
+access_team_manager,assistance.team responsable,model_assistance_team,assistance.group_manager,1,1,1,1
+access_stage_user,assistance.stage utilisateur,model_assistance_stage,assistance.group_user,1,0,0,0
+access_stage_manager,assistance.stage responsable,model_assistance_stage,assistance.group_manager,1,1,1,1
+access_tag_user,assistance.tag utilisateur,model_assistance_tag,assistance.group_user,1,0,0,0
+access_tag_manager,assistance.tag responsable,model_assistance_tag,assistance.group_manager,1,1,1,1

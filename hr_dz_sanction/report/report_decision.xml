@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="report_decision_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.internal_layout">
+                    <div class="page">
+
+                        <!-- En-tête -->
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <strong><t t-esc="o.company_id.name"/></strong>
+                                <div t-if="o.company_id.street">
+                                    <t t-esc="o.company_id.street"/>
+                                </div>
+                                <div t-if="o.company_id.city">
+                                    <t t-esc="o.company_id.city"/>
+                                </div>
+                            </div>
+                            <div class="col-6 text-end">
+                                <div>
+                                    Réf. : <strong><t t-esc="o.name"/></strong>
+                                </div>
+                                <div>
+                                    Date :
+                                    <span t-field="o.date_decision"
+                                          t-options='{"format": "dd MMMM yyyy"}'/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Titre -->
+                        <div class="text-center mb-5">
+                            <h2 class="text-decoration-underline">
+                                DÉCISION DISCIPLINAIRE
+                            </h2>
+                            <p class="text-muted">
+                                (Loi n° 90-11 du 21 avril 1990 — Art. 73)
+                            </p>
+                        </div>
+
+                        <!-- Identité de l'employé -->
+                        <table class="table table-bordered mb-4">
+                            <tr>
+                                <th style="width:40%">Nom et prénom</th>
+                                <td><t t-esc="o.employee_id.name"/></td>
+                            </tr>
+                            <tr>
+                                <th>Poste occupé</th>
+                                <td><t t-esc="o.job_id.name or '—'"/></td>
+                            </tr>
+                            <tr>
+                                <th>Département</th>
+                                <td><t t-esc="o.department_id.name or '—'"/></td>
+                            </tr>
+                        </table>
+
+                        <!-- Faits reprochés -->
+                        <div class="mb-4">
+                            <h5>VU les faits reprochés :</h5>
+                            <p>
+                                <strong><t t-esc="o.fault_id.name"/></strong>
+                                (<t t-esc="dict([('1','1er degré'),('2','2ème degré'),('3','3ème degré'),('4','4ème degré')]).get(o.degree, '?')"/>)
+                                — constatés le
+                                <span t-field="o.date_incident"
+                                      t-options='{"format": "dd MMMM yyyy"}'/>.
+                            </p>
+                        </div>
+
+                        <!-- Audition -->
+                        <div class="mb-4">
+                            <h5>VU l'audition du :</h5>
+                            <p>
+                                <span t-field="o.date_audition"
+                                      t-options='{"format": "dd MMMM yyyy"}'/>
+                            </p>
+                            <t t-if="o.employee_response">
+                                <p>
+                                    <em>Déclaration de l'intéressé(e) :</em><br/>
+                                    <t t-out="o.employee_response"/>
+                                </p>
+                            </t>
+                        </div>
+
+                        <!-- DECIDE -->
+                        <div class="text-center my-4">
+                            <h4>D É C I D E</h4>
+                        </div>
+
+                        <div class="mb-4">
+                            <p>
+                                <strong>Article 1er :</strong>
+                                La sanction de
+                                <strong><t t-esc="o.sanction_type_id.name"/></strong>
+                                est prononcée à l'encontre de
+                                <strong><t t-esc="o.employee_id.name"/></strong>,
+                                conformément aux dispositions de la Loi 90-11 Art.73
+                                (<t t-esc="dict([('1','1er degré'),('2','2ème degré'),('3','3ème degré'),('4','4ème degré')]).get(o.degree, '?')"/>).
+                            </p>
+                            <t t-if="o.date_effet">
+                                <p>
+                                    <strong>Article 2 :</strong>
+                                    La présente décision prend effet le
+                                    <span t-field="o.date_effet"
+                                          t-options='{"format": "dd MMMM yyyy"}'/>
+                                    .
+                                </p>
+                            </t>
+                            <t t-if="o.decision_note">
+                                <p>
+                                    <strong>Motifs :</strong><br/>
+                                    <t t-out="o.decision_note"/>
+                                </p>
+                            </t>
+                        </div>
+
+                        <!-- Recours -->
+                        <div class="alert alert-light border mt-3 mb-5" style="font-size:0.85rem;">
+                            <strong>Voies de recours :</strong>
+                            L'intéressé(e) dispose d'un délai de 15 jours à compter
+                            de la notification de la présente pour former un recours
+                            auprès de la Commission de Discipline.
+                        </div>
+
+                        <!-- Signatures -->
+                        <div class="row mt-4">
+                            <div class="col-6 text-center">
+                                <p>L'intéressé(e) (notification le
+                                    <span t-field="o.date_notification"
+                                          t-options='{"format": "dd/MM/yyyy"}'/>)
+                                </p>
+                                <br/><br/><br/>
+                                <p><strong><t t-esc="o.employee_id.name"/></strong></p>
+                                <div style="border-bottom:1px solid #000; margin:0 20px;"/>
+                            </div>
+                            <div class="col-6 text-center">
+                                <p>Le Directeur Général / DRH</p>
+                                <br/><br/><br/>
+                                <p><strong><t t-esc="o.user_id.name"/></strong></p>
+                                <div style="border-bottom:1px solid #000; margin:0 20px;"/>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

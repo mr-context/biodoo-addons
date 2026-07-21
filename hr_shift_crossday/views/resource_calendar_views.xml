@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ─── 1. Formulaire horaire de travail : toggle + bannière ─── -->
+    <record id="resource_calendar_form_crossday" model="ir.ui.view">
+        <field name="name">resource.calendar.form.crossday</field>
+        <field name="model">resource.calendar</field>
+        <field name="inherit_id" ref="resource.resource_calendar_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='attendance_ids']" position="before">
+                <div class="d-flex align-items-start gap-2 mb-2">
+                    <field name="is_crossday" widget="boolean_toggle" nolabel="1"/>
+                    <div>
+                        <strong>Shift traversant minuit</strong>
+                        <div class="text-muted small">
+                            Activer pour les équipes de nuit dont l'horaire dépasse minuit
+                            (ex : Lundi 22:00 → Mardi 06:00).
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-info mb-2" role="alert" invisible="not is_crossday">
+                    <strong>Mode shift de nuit actif.</strong>
+                    Saisir l'heure de fin réelle (ex : <em>06:00</em> pour une sortie à 6h du matin).
+                    Le jour de sortie s'affiche automatiquement dans la colonne <em>Jour fin</em>.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ─── 2. Lignes de plages horaires : colonnes Heure fin / Jour fin ─── -->
+    <record id="resource_calendar_attendance_list_crossday" model="ir.ui.view">
+        <field name="name">resource.calendar.attendance.list.crossday</field>
+        <field name="model">resource.calendar.attendance</field>
+        <field name="inherit_id" ref="resource.view_resource_calendar_attendance_tree"/>
+        <field name="arch" type="xml">
+            <!-- Masquer hour_to standard en mode crossday -->
+            <xpath expr="//field[@name='hour_to']" position="attributes">
+                <attribute name="column_invisible">parent.duration_based or parent.is_crossday</attribute>
+            </xpath>
+            <!-- Ajouter les colonnes crossday après hour_to -->
+            <xpath expr="//field[@name='hour_to']" position="after">
+                <field name="crossday_hour_to"
+                       widget="float_time"
+                       string="Heure fin"
+                       column_invisible="not parent.is_crossday or parent.duration_based"/>
+                <field name="crossday_day_to"
+                       string="Jour fin"
+                       readonly="1"
+                       column_invisible="not parent.is_crossday"/>
+            </xpath>
+        </field>
+    </record>
+
+
+    <!-- ─── 3. Form individuel d'une ligne horaire : afficher heure naturelle ─── -->
+    <record id="resource_calendar_attendance_form_crossday" model="ir.ui.view">
+        <field name="name">resource.calendar.attendance.form.crossday</field>
+        <field name="model">resource.calendar.attendance</field>
+        <field name="inherit_id" ref="resource.view_resource_calendar_attendance_form"/>
+        <field name="arch" type="xml">
+            <!-- Masquer hour_to standard en mode crossday -->
+            <xpath expr="//field[@name='hour_to']" position="attributes">
+                <attribute name="invisible">calendar_id.is_crossday</attribute>
+            </xpath>
+            <!-- Ajouter heure fin naturelle + jour fin après hour_to -->
+            <xpath expr="//field[@name='hour_to']" position="after">
+                <field name="crossday_hour_to"
+                       widget="float_time"
+                       string="Fin"
+                       invisible="not calendar_id.is_crossday"/>
+                <field name="crossday_day_to"
+                       string="Jour fin"
+                       readonly="1"
+                       invisible="not calendar_id.is_crossday"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

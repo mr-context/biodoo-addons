@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Menu racine — Application
+    ================================================================ -->
+    <menuitem id="menu_assistance_root"
+              name="Assistance"
+              sequence="90"
+              web_icon="assistance,static/src/img/portal-assistance.svg"
+              groups="assistance.group_user"/>
+
+    <!-- ================================================================
+         Menus principaux
+    ================================================================ -->
+    <menuitem id="menu_assistance_my_tickets"
+              name="Mes tickets"
+              parent="menu_assistance_root"
+              action="action_assistance_ticket_mine"
+              sequence="10"
+              groups="assistance.group_user"/>
+
+    <menuitem id="menu_assistance_all_tickets"
+              name="Tous les tickets"
+              parent="menu_assistance_root"
+              action="action_assistance_ticket_all"
+              sequence="20"
+              groups="assistance.group_user"/>
+
+    <!-- ================================================================
+         Configuration (managers uniquement)
+    ================================================================ -->
+    <menuitem id="menu_assistance_config"
+              name="Configuration"
+              parent="menu_assistance_root"
+              sequence="100"
+              groups="assistance.group_manager"/>
+
+    <menuitem id="menu_assistance_teams"
+              name="Équipes"
+              parent="menu_assistance_config"
+              action="action_assistance_team"
+              sequence="10"
+              groups="assistance.group_manager"/>
+
+    <menuitem id="menu_assistance_stages"
+              name="Étapes"
+              parent="menu_assistance_config"
+              action="action_assistance_stage"
+              sequence="20"
+              groups="assistance.group_manager"/>
+
+    <menuitem id="menu_assistance_tags"
+              name="Étiquettes"
+              parent="menu_assistance_config"
+              action="action_assistance_tag"
+              sequence="30"
+              groups="assistance.group_manager"/>
+
+</odoo>

@@ -1,0 +1,638 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ═══════════════════════════════════════════════════════════════════
+         CATÉGORIES DE RÈGLES SALARIALES
+    ═══════════════════════════════════════════════════════════════════ -->
+
+    <record id="category_basic" model="hr.salary.rule.category">
+        <field name="name">Salaire de Base</field>
+        <field name="code">BASE</field>
+    </record>
+
+    <!-- Indemnités cotisables (primes + excédent transport/panier > 500 DA/j) -->
+    <record id="category_allowance" model="hr.salary.rule.category">
+        <field name="name">Indemnités Cotisables</field>
+        <field name="code">IND</field>
+    </record>
+
+    <!-- Indemnités NON cotisables / NON imposables (transport ≤ 250 DA/j + panier ≤ 250 DA/j) -->
+    <!-- Plafond global 500 DA/j — Instruction n°02 du 15/05/2011 DG CNAS -->
+    <record id="category_non_cotisable" model="hr.salary.rule.category">
+        <field name="name">Indemnités Non Cotisables</field>
+        <field name="code">NON_COT</field>
+    </record>
+
+    <record id="category_overtime" model="hr.salary.rule.category">
+        <field name="name">Heures Supplémentaires</field>
+        <field name="code">HS</field>
+    </record>
+
+    <record id="category_absence" model="hr.salary.rule.category">
+        <field name="name">Retenues Absence</field>
+        <field name="code">ABS</field>
+    </record>
+
+    <record id="category_gross" model="hr.salary.rule.category">
+        <field name="name">Brut Cotisable</field>
+        <field name="code">BRUT</field>
+    </record>
+
+    <record id="category_deduction" model="hr.salary.rule.category">
+        <field name="name">Retenues</field>
+        <field name="code">RET</field>
+    </record>
+
+    <record id="category_employer" model="hr.salary.rule.category">
+        <field name="name">Charges Patronales</field>
+        <field name="code">PATR</field>
+    </record>
+
+    <record id="category_net" model="hr.salary.rule.category">
+        <field name="name">Net</field>
+        <field name="code">NET</field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         RÈGLES SALARIALES — ORDRE BULLETIN ALGÉRIEN
+         ─────────────────────────────────────────────────────────────────
+         seq 10  : BASIC         — Salaire de base
+         seq 15  : CONG_PAY      — Congés payés (informatif, 0 DA)
+         seq 20  : TRANSPORT     — Indemnité transport ≤ 250 DA/j (NON_COT) [Instr. CNAS n°02/2011]
+         seq 21  : PANIER        — Indemnité panier   ≤ 250 DA/j (NON_COT) [plafond global 500 DA/j]
+         seq 22  : TRANSPORT_COT — Excédent transport > 250 DA/j (IND)
+         seq 23  : PANIER_COT    — Excédent panier    > 250 DA/j (IND)
+         seq 24  : PRIMES        — Primes cotisables (IND, → GROSS)
+         seq 25  : PRIMES_NC     — Primes non cotisables (NON_COT, imposables ajoutées à IMPOSABLE)
+         seq 26  : PSU           — Prime de Salaire Unique 800 DA (NON_COT)
+         seq 27  : SCOLARITE     — Prime de Scolarité 3 000 DA × enfants sco — sept. (NON_COT)
+         seq 40  : ABSENCE       — Retenue absence (ABS)
+         seq 41  : LATE          — Retenue retard (ABS)
+         seq 42  : EARLY         — Retenue départ anticipé (ABS)
+         seq 50  : HS50          — HS 50%  base légale Art.32 (HS)
+         seq 51  : HS75          — HS 75%  palier conventionnel (HS)
+         seq 52  : HS100         — HS 100% nuit/vendredi/fériés (HS)
+         seq 60  : GROSS         — Brut Cotisable (assiette CNAS)
+         seq 65  : AF            — Allocations Familiales 300/600 DA × enfants (NON_COT) — après GROSS
+         seq 70  : CNAS_SAL      — CNAS Salarié 9% (RET)
+         seq 75  : MUTUELLE      — Cotisation mutuelle Art.70 CIDTA (RET, facultatif)
+         seq 80  : IMPOSABLE     — Net Imposable = GROSS − CNAS − MUTUELLE + TRANSPORT + PANIER + PRIMES_NC_IMP
+         seq 90  : IRG           — IRG barème progressif Art.104 CIDTA (RET)
+         seq 100 : NET           — Net à Payer
+         seq 110 : CNAS_PATR     — CNAS Patronale (hors bulletin)
+    ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- ── 1. Salaire de Base ─────────────────────────────────────────── -->
+    <record id="rule_basic" model="hr.salary.rule">
+        <field name="name">Salaire de Base</field>
+        <field name="code">BASIC</field>
+        <field name="sequence">10</field>
+        <field name="category_id" ref="category_basic"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+jours_base = contract.working_days_per_month or 22
+result_qty = jours_base
+result = contract.wage / jours_base
+        </field>
+    </record>
+
+    <!-- ── 2. Congés payés (informatif — 0 DA, jours déjà rémunérés) ─── -->
+    <record id="rule_paid_leaves" model="hr.salary.rule">
+        <field name="name">Congés payés</field>
+        <field name="code">CONG_PAY</field>
+        <field name="sequence">15</field>
+        <field name="category_id" ref="category_basic"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+_paid_leave_codes = [
+    t.code for t in payslip.env['hr.work.entry.type'].search([])
+    if t.is_paid and t.is_leave and t.code
+]
+_jours = sum(
+    worked_days.dict[c].number_of_days
+    for c in _paid_leave_codes if c in worked_days.dict
+)
+result = _jours > 0
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+# Montant 0 : ces jours sont déjà payés via le Salaire de Base
+_paid_leave_codes = [
+    t.code for t in payslip.env['hr.work.entry.type'].search([])
+    if t.is_paid and t.is_leave and t.code
+]
+result_qty = sum(
+    worked_days.dict[c].number_of_days
+    for c in _paid_leave_codes if c in worked_days.dict
+)
+result = 0
+        </field>
+    </record>
+
+    <!-- ── 3a. Indemnité Transport — portion NON cotisable (≤ cap DA/j) ── -->
+    <!-- Cap configurable via hr.legal.parameter code='transport_daily_cap'   -->
+    <record id="rule_transport" model="hr.salary.rule">
+        <field name="name">Indemnité Transport</field>
+        <field name="code">TRANSPORT</field>
+        <field name="sequence">20</field>
+        <field name="category_id" ref="category_non_cotisable"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = contract.transport_allowance_enabled</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+LP = payslip.env['hr.legal.parameter']
+_enabled = LP.get_value('transport_meal_cap_enabled') != 0
+_cap = LP.get_value('transport_daily_cap') or 250.0
+jours_work = sum(
+    line.number_of_days
+    for line in payslip.worked_days_line_ids
+    if line.work_entry_type_id.is_standard_work
+)
+taux = contract.daily_transport_allowance or 200
+result_qty = jours_work
+result = min(taux, _cap) if _enabled else taux
+        </field>
+    </record>
+
+    <!-- ── 3b. Indemnité Panier — portion NON cotisable ───────────────── -->
+    <!-- Si règle activée : min(taux, cap). Si désactivée : tout exonéré. -->
+    <record id="rule_panier" model="hr.salary.rule">
+        <field name="name">Indemnité Panier</field>
+        <field name="code">PANIER</field>
+        <field name="sequence">21</field>
+        <field name="category_id" ref="category_non_cotisable"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = contract.meal_allowance_enabled</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+LP = payslip.env['hr.legal.parameter']
+_enabled = LP.get_value('transport_meal_cap_enabled') != 0
+_cap = LP.get_value('meal_daily_cap') or 250.0
+jours_work = sum(
+    line.number_of_days
+    for line in payslip.worked_days_line_ids
+    if line.work_entry_type_id.is_standard_work
+)
+taux = contract.daily_meal_allowance or 400
+result_qty = jours_work
+result = min(taux, _cap) if _enabled else taux
+        </field>
+    </record>
+
+    <!-- ── 3c. Transport COT — excédent cotisable (règle activée seulement) -->
+    <record id="rule_transport_cotisable" model="hr.salary.rule">
+        <field name="name">Transport Cotisable (excédent)</field>
+        <field name="code">TRANSPORT_COT</field>
+        <field name="sequence">22</field>
+        <field name="category_id" ref="category_allowance"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+LP = payslip.env['hr.legal.parameter']
+_enabled = LP.get_value('transport_meal_cap_enabled') != 0
+_cap = LP.get_value('transport_daily_cap') or 250.0
+result = (
+    _enabled
+    and contract.transport_allowance_enabled
+    and (contract.daily_transport_allowance or 0) > _cap
+)
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+LP = payslip.env['hr.legal.parameter']
+_cap = LP.get_value('transport_daily_cap') or 250.0
+jours_work = sum(
+    line.number_of_days
+    for line in payslip.worked_days_line_ids
+    if line.work_entry_type_id.is_standard_work
+)
+result_qty = jours_work
+result = (contract.daily_transport_allowance or 0) - _cap
+        </field>
+    </record>
+
+    <!-- ── 3d. Panier COT — excédent cotisable (règle activée seulement) ─ -->
+    <record id="rule_panier_cotisable" model="hr.salary.rule">
+        <field name="name">Panier Cotisable (excédent)</field>
+        <field name="code">PANIER_COT</field>
+        <field name="sequence">23</field>
+        <field name="category_id" ref="category_allowance"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+LP = payslip.env['hr.legal.parameter']
+_enabled = LP.get_value('transport_meal_cap_enabled') != 0
+_cap = LP.get_value('meal_daily_cap') or 250.0
+result = (
+    _enabled
+    and contract.meal_allowance_enabled
+    and (contract.daily_meal_allowance or 0) > _cap
+)
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+LP = payslip.env['hr.legal.parameter']
+_cap = LP.get_value('meal_daily_cap') or 250.0
+jours_work = sum(
+    line.number_of_days
+    for line in payslip.worked_days_line_ids
+    if line.work_entry_type_id.is_standard_work
+)
+result_qty = jours_work
+result = (contract.daily_meal_allowance or 0) - _cap
+        </field>
+    </record>
+
+    <!-- ── 4a. Primes cotisables (IND → GROSS → CNAS + IRG) ────────────── -->
+    <!-- Filtre prime_line_ids sur is_cotisable = True (défaut).              -->
+    <record id="rule_primes" model="hr.salary.rule">
+        <field name="name">Primes (cotisables)</field>
+        <field name="code">PRIMES</field>
+        <field name="sequence">24</field>
+        <field name="category_id" ref="category_allowance"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+result = any(l.amount for l in contract.prime_line_ids if l.is_cotisable)
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+jours_ouvrables = contract.working_days_per_month or 22
+jours_presents = sum(
+    line.number_of_days
+    for line in payslip.worked_days_line_ids
+    if line.work_entry_type_id.is_paid
+)
+total_primes = sum(l.amount or 0.0 for l in contract.prime_line_ids if l.is_cotisable)
+result_qty = jours_presents
+result = total_primes / jours_ouvrables
+        </field>
+    </record>
+
+    <!-- ── 4a-bis. Primes non cotisables (NON_COT → NET, pas dans GROSS) ── -->
+    <!-- Exclues de l'assiette CNAS. La portion imposable est ajoutée         -->
+    <!-- explicitement dans la règle IMPOSABLE (seq 80).                      -->
+    <record id="rule_primes_nc" model="hr.salary.rule">
+        <field name="name">Primes (non cotisables)</field>
+        <field name="code">PRIMES_NC</field>
+        <field name="sequence">25</field>
+        <field name="category_id" ref="category_non_cotisable"/>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+result = any(l.amount for l in contract.prime_line_ids if not l.is_cotisable)
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+jours_ouvrables = contract.working_days_per_month or 22
+jours_presents = sum(
+    line.number_of_days
+    for line in payslip.worked_days_line_ids
+    if line.work_entry_type_id.is_paid
+)
+total_primes = sum(l.amount or 0.0 for l in contract.prime_line_ids if not l.is_cotisable)
+result_qty = jours_presents
+result = total_primes / jours_ouvrables
+        </field>
+    </record>
+
+    <!-- ── 4c. PSU — Prime de Salaire Unique (Décret 25-168) ─────────────── -->
+    <!-- 800 DA/mois — Marié dont le conjoint ne travaille pas               -->
+    <!-- NON cotisable + NON imposable (versé par l'employeur, remboursé CNAS)-->
+    <record id="rule_psu" model="hr.salary.rule">
+        <field name="name">Prime de Salaire Unique (PSU)</field>
+        <field name="code">PSU</field>
+        <field name="sequence">26</field>
+        <field name="category_id" ref="category_non_cotisable"/>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = contract.compute_psu() > 0</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result = contract.compute_psu()
+        </field>
+    </record>
+
+    <!-- ── 4d. AF — Allocations Familiales (Décret 25-168) ───────────────── -->
+    <!-- 300 DA/enfant si GROSS > 15 000 DA / 600 DA si GROSS ≤ 15 000 DA    -->
+    <!-- NON cotisable + NON imposable                                        -->
+    <record id="rule_af" model="hr.salary.rule">
+        <field name="name">Allocations Familiales (AF)</field>
+        <field name="code">AF</field>
+        <field name="sequence">65</field>
+        <field name="category_id" ref="category_non_cotisable"/>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = contract.compute_af(GROSS) > 0</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result = contract.compute_af(GROSS)
+        </field>
+    </record>
+
+    <!-- ── 4e. SCOLARITE — Prime de Scolarité (Décret 25-168) ──────────── -->
+    <!-- 3 000 DA par enfant scolarisé — versée en septembre uniquement      -->
+    <!-- NON cotisable + NON imposable                                        -->
+    <record id="rule_scolarite" model="hr.salary.rule">
+        <field name="name">Prime de Scolarité</field>
+        <field name="code">SCOLARITE</field>
+        <field name="sequence">28</field>
+        <field name="category_id" ref="category_non_cotisable"/>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+result = contract.compute_scolarite() > 0 and payslip.date_from.month == 9
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result = contract.compute_scolarite()
+        </field>
+    </record>
+
+    <!-- ── 5a. Retenue Absence ──────────────────────────────────────────── -->
+    <record id="rule_absence" model="hr.salary.rule">
+        <field name="name">Retenue Absence</field>
+        <field name="code">ABSENCE</field>
+        <field name="sequence">40</field>
+        <field name="category_id" ref="category_absence"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+jours_ouvrables = contract.working_days_per_month or 22
+jours_presents = sum(
+    line.number_of_days
+    for line in payslip.worked_days_line_ids
+    if line.work_entry_type_id.is_paid
+)
+result = jours_presents &lt; jours_ouvrables
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+# Retenue = -(salaire journalier × jours d'absence)
+# is_paid=True → présent (CA, maladie, fériés, récup) → pas de retenue
+# is_paid=False → absent non justifié → retenue
+jours_ouvrables = contract.working_days_per_month or 22
+jours_presents = sum(
+    line.number_of_days
+    for line in payslip.worked_days_line_ids
+    if line.work_entry_type_id.is_paid
+)
+jours_absence = max(0, jours_ouvrables - jours_presents)
+result_qty = jours_absence
+result = -(contract.wage / jours_ouvrables)
+        </field>
+    </record>
+
+    <!-- ── 5b. Retenue Retard ───────────────────────────────────────────── -->
+    <record id="rule_late_deduction" model="hr.salary.rule">
+        <field name="name">Retenue Retard (h)</field>
+        <field name="code">LATE</field>
+        <field name="sequence">41</field>
+        <field name="category_id" ref="category_absence"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = bool(worked_days.LATE and worked_days.LATE.number_of_hours > 0)</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result_qty = worked_days.LATE.number_of_hours
+result = -(contract.wage / (contract.monthly_hours or 173.33))
+        </field>
+    </record>
+
+    <!-- ── 5c. Retenue Départ anticipé ─────────────────────────────────── -->
+    <record id="rule_early_deduction" model="hr.salary.rule">
+        <field name="name">Retenue Départ anticipé (h)</field>
+        <field name="code">EARLY</field>
+        <field name="sequence">42</field>
+        <field name="category_id" ref="category_absence"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = bool(worked_days.EARLY and worked_days.EARLY.number_of_hours > 0)</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result_qty = worked_days.EARLY.number_of_hours
+result = -(contract.wage / (contract.monthly_hours or 173.33))
+        </field>
+    </record>
+
+    <!-- ── 6a. Heures Sup. 50% — Base légale Art. 32 Loi 90-11 ────────── -->
+    <!-- MINIMUM LÉGAL pour jours ouvrables normaux. 25% est illégal.      -->
+    <record id="rule_overtime" model="hr.salary.rule">
+        <field name="name">Heures Sup. 50% (Base légale)</field>
+        <field name="code">HS50</field>
+        <field name="sequence">50</field>
+        <field name="category_id" ref="category_overtime"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = bool(worked_days.OT50 and worked_days.OT50.number_of_hours > 0)</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result_qty = worked_days.OT50.number_of_hours
+result = (contract.wage / (contract.monthly_hours or 173.33)) * 1.50
+        </field>
+    </record>
+
+    <!-- ── 6b. Heures Sup. 75% — Palier conventionnel ───────────────────── -->
+    <record id="rule_overtime_25" model="hr.salary.rule">
+        <field name="name">Heures Sup. 75% (Conventionnel)</field>
+        <field name="code">HS75</field>
+        <field name="sequence">51</field>
+        <field name="category_id" ref="category_overtime"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = bool(worked_days.OT75 and worked_days.OT75.number_of_hours > 0)</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result_qty = worked_days.OT75.number_of_hours
+result = (contract.wage / (contract.monthly_hours or 173.33)) * 1.75
+        </field>
+    </record>
+
+    <!-- ── 6c. Heures Sup. 100% — Nuit (21h-05h) / Vendredi / Fériés ──── -->
+    <record id="rule_overtime_100" model="hr.salary.rule">
+        <field name="name">Heures Sup. 100% (Nuit/Fériés)</field>
+        <field name="code">HS100</field>
+        <field name="sequence">52</field>
+        <field name="category_id" ref="category_overtime"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = bool(worked_days.OT100 and worked_days.OT100.number_of_hours > 0)</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result_qty = worked_days.OT100.number_of_hours
+result = (contract.wage / (contract.monthly_hours or 173.33)) * 2.0
+        </field>
+    </record>
+
+    <!-- ── 7. Salaire Brut Cotisable (Assiette CNAS) ─────────────────────── -->
+    <!--   GROSS = BASE + IND (primes + excédents) + HS + ABS               -->
+    <!--   NON_COT (transport/panier ≤ 500/j) est EXCLU de l'assiette CNAS  -->
+    <record id="rule_gross" model="hr.salary.rule">
+        <field name="name">Salaire Brut Cotisable</field>
+        <field name="code">GROSS</field>
+        <field name="sequence">60</field>
+        <field name="category_id" ref="category_gross"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+# Assiette CNAS = Base + Indemnités cotisables + HS − Absences
+# NON_COT (transport/panier portion exonérée) volontairement exclu
+result = categories.BASE + categories.IND + categories.HS + categories.ABS
+        </field>
+    </record>
+
+    <!-- ── 8. CNAS Salarié — taux configurable via hr.legal.parameter ──── -->
+    <record id="rule_cnas_employee" model="hr.salary.rule">
+        <field name="name">CNAS Salarié</field>
+        <field name="code">CNAS_SAL</field>
+        <field name="sequence">70</field>
+        <field name="category_id" ref="category_deduction"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+_rate = payslip.env['hr.legal.parameter'].get_value('cnas_worker_rate') or 9.0
+result = -round(GROSS * _rate / 100.0, 2)
+        </field>
+    </record>
+
+    <!-- ── 8b. Mutuelle — cotisation déductible du net imposable (Art. 70 CIDTA) -->
+    <!--   Facultative : s'applique uniquement si contrat.mutuelle_taux > 0   -->
+    <record id="rule_mutuelle" model="hr.salary.rule">
+        <field name="name">Mutuelle</field>
+        <field name="code">MUTUELLE</field>
+        <field name="sequence">75</field>
+        <field name="category_id" ref="category_deduction"/>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = bool(contract.mutuelle_taux)</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result = -contract.compute_mutuelle(GROSS)
+        </field>
+    </record>
+
+    <!-- ── 9. Net Imposable (Assiette IRG) ───────────────────────────────── -->
+    <!--   IMPOSABLE = GROSS − CNAS 9% − Mutuelle + Transport_NON_COT + Panier_NON_COT -->
+    <!--   Transport/Panier ≤ 500 DA/j : exonérés CNAS mais IMPOSABLES IRG   -->
+    <!--   Confirmé : talent.com, talenteo.com, forum DLG/PC Paie             -->
+    <record id="rule_taxable" model="hr.salary.rule">
+        <field name="name">Salaire Net Imposable</field>
+        <field name="code">IMPOSABLE</field>
+        <field name="sequence">80</field>
+        <field name="category_id" ref="category_gross"/>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+# Net imposable = Brut cotisable − CNAS − Mutuelle + Transport_non_cot + Panier_non_cot
+#                + Primes non-cotisables mais imposables (fixes + exceptionnelles barème)
+# Transport/Panier ≤ 500 DA/j : exonérés CNAS (Loi 83-14) mais imposables IRG (Art. 104 CIDTA)
+# PSU, AF, Scolarité restent NON imposables (exemptions Art. 70 CIDTA)
+# Primes exceptionnelles forfaitaires : exclues (taxées séparément via IRG_PRIME_FORF)
+_jours_ouv = contract.working_days_per_month or 22
+_jours_pres = sum(l.number_of_days for l in payslip.worked_days_line_ids if l.work_entry_type_id.is_paid)
+_primes_nc_imp = sum(l.amount or 0.0 for l in contract.prime_line_ids if not l.is_cotisable and l.is_imposable) * _jours_pres / _jours_ouv
+# Primes exceptionnelles non-cot imposables (barème uniquement, pas forfaitaire)
+try:
+    _exc = payslip.env['hr.prime.campaign'].get_employee_primes(
+        employee.id, payslip.date_from, payslip.date_to)
+    _primes_exc_nc_imp = _exc['nc_imposable_bareme']
+except Exception:
+    _primes_exc_nc_imp = 0.0
+result = GROSS + CNAS_SAL + TRANSPORT + PANIER + _primes_nc_imp + _primes_exc_nc_imp - contract.compute_mutuelle(GROSS)
+        </field>
+    </record>
+
+    <!-- ── 10. IRG — Impôt sur le Revenu Global (Art. 104 CIDTA) ─────────── -->
+    <!--   Barème progressif mensuel :                                         -->
+    <!--     0%  : IMPOSABLE ≤ 20 000 DA                                       -->
+    <!--    23%  : 20 001 − 40 000 DA                                          -->
+    <!--    27%  : 40 001 − 80 000 DA                                          -->
+    <!--    30%  : 80 001 − 160 000 DA                                         -->
+    <!--    33%  : 160 001 − 320 000 DA                                        -->
+    <!--    35%  : > 320 000 DA                                                 -->
+    <!--   Abattement 40% plafonné (min 1 000 DA / max 1 500 DA)               -->
+    <!--   Exonération : IMPOSABLE ≤ 30 000 DA → IRG = 0                       -->
+    <!--   Décote (lissage) : 30 001 − 35 000 DA                               -->
+    <!--   Tout cela est géré dans contract.compute_irg()                      -->
+    <record id="rule_irg" model="hr.salary.rule">
+        <field name="name">IRG</field>
+        <field name="code">IRG</field>
+        <field name="sequence">90</field>
+        <field name="category_id" ref="category_deduction"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+result = IMPOSABLE > 0 and not (employee.is_handicap or False)
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result = -contract.compute_irg(IMPOSABLE, chef_famille=contract.is_chef_famille())
+        </field>
+    </record>
+
+    <!-- ── 11. Net à Payer ─────────────────────────────────────────────────── -->
+    <!--   NET = GROSS + RET (CNAS + IRG) + NON_COT − AF                       -->
+    <!--   AF exclues du NET (remboursées par la CNAS, convention PC Paie)      -->
+    <record id="rule_net" model="hr.salary.rule">
+        <field name="name">Net à Payer</field>
+        <field name="code">NET</field>
+        <field name="sequence">100</field>
+        <field name="category_id" ref="category_net"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+# Net = Brut cotisable − CNAS − IRG + NON_COT (transport, panier, PSU…)
+# AF exclues : remboursées par la CNAS à l'employeur (convention PC Paie)
+try:
+    _af = AF
+except Exception:
+    _af = 0.0
+result = GROSS + categories.RET + categories.NON_COT - _af
+        </field>
+    </record>
+
+    <!-- ── 12. CNAS Patronale — hors bulletin (taux variable) ─────────────── -->
+    <!--   Standard : 25% CNAS + 0.5% FNPOS + 0.5% Œuvres Sociales = 26%      -->
+    <!--   Abattements ANEM/CTA : 2.5% / 5% / 15% selon convention            -->
+    <record id="rule_cnas_employer" model="hr.salary.rule">
+        <field name="name">CNAS Patronale</field>
+        <field name="code">CNAS_PATR</field>
+        <field name="sequence">110</field>
+        <field name="category_id" ref="category_employer"/>
+        <field name="appears_on_payslip" eval="False"/>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+result_rate = contract.get_cnas_patron_rate(payslip.date_to)
+result_name = 'CNAS Patronale (%d%%)' % int(result_rate)
+result_qty = 1.0
+result = GROSS
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         STRUCTURE SALARIALE ALGÉRIENNE — BASE
+    ═══════════════════════════════════════════════════════════════════ -->
+    <record id="structure_dz_base" model="hr.payroll.structure">
+        <field name="name">Structure Algérie - Base</field>
+        <field name="code">DZ_BASE</field>
+        <field name="rule_ids" eval="[(6, 0, [
+            ref('rule_basic'),
+            ref('rule_paid_leaves'),
+            ref('rule_transport'),
+            ref('rule_panier'),
+            ref('rule_transport_cotisable'),
+            ref('rule_panier_cotisable'),
+            ref('rule_primes'),
+            ref('rule_primes_nc'),
+            ref('rule_psu'),
+            ref('rule_af'),
+            ref('rule_scolarite'),
+            ref('rule_absence'),
+            ref('rule_late_deduction'),
+            ref('rule_early_deduction'),
+            ref('rule_overtime'),
+            ref('rule_overtime_25'),
+            ref('rule_overtime_100'),
+            ref('rule_gross'),
+            ref('rule_cnas_employee'),
+            ref('rule_mutuelle'),
+            ref('rule_taxable'),
+            ref('rule_irg'),
+            ref('rule_net'),
+            ref('rule_cnas_employer'),
+        ])]"/>
+    </record>
+
+</odoo>

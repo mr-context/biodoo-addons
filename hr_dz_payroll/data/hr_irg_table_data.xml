@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!--
+        Barème IRG 2022 (LFC 2022 - Art. 104 CIDTA)
+        Source : TABLE_IRG_2022.pdf (DGI Algérie)
+
+        Tranches mensuelles :
+          0        à 20 000 DA : 0%
+          20 001   à 40 000 DA : 23%
+          40 001   à 80 000 DA : 27%
+          80 001   à 160 000 DA: 30%
+          160 001  à 320 000 DA: 33%
+          Au-delà de 320 000 DA: 35%
+
+        Abattement : 40% de l'IRG brut, min 1 000 DA/mois, max 1 500 DA/mois
+        Seuil exonération : 30 000 DA/mois
+        Décote : lissage au seuil (valeurs vérifiées sur le tableau officiel DGI)
+    -->
+
+    <record id="irg_table_2022" model="hr.irg.table">
+        <field name="name">Barème IRG 2022</field>
+        <field name="active" eval="True"/>
+        <field name="abatement_rate">0.40</field>
+        <field name="abatement_min">1000</field>
+        <field name="abatement_max">1500</field>
+        <field name="exemption_threshold">30000</field>
+        <!-- Décote cas général : active de 30 001 à ~35 000 DA d'imposable -->
+        <field name="decote_general_seuil">2070.0</field>
+        <field name="decote_general_k">1.686340</field>
+        <!-- Décote cas particuliers : active de 30 001 à ~42 500 DA d'imposable -->
+        <field name="decote_particulier_seuil">3775.0</field>
+        <field name="decote_particulier_k">0.524764</field>
+    </record>
+
+    <!-- Tranche 0 : 0 à 20 000 DA → 0% -->
+    <record id="irg_line_tranche_0" model="hr.irg.table.line">
+        <field name="table_id" ref="irg_table_2022"/>
+        <field name="sequence">1</field>
+        <field name="min_amount">0</field>
+        <field name="max_amount">20000</field>
+        <field name="rate">0</field>
+    </record>
+
+    <!-- Tranche 1 : 20 001 à 40 000 DA → 23% -->
+    <record id="irg_line_tranche_1" model="hr.irg.table.line">
+        <field name="table_id" ref="irg_table_2022"/>
+        <field name="sequence">2</field>
+        <field name="min_amount">20000</field>
+        <field name="max_amount">40000</field>
+        <field name="rate">23</field>
+    </record>
+
+    <!-- Tranche 2 : 40 001 à 80 000 DA → 27% -->
+    <record id="irg_line_tranche_2" model="hr.irg.table.line">
+        <field name="table_id" ref="irg_table_2022"/>
+        <field name="sequence">3</field>
+        <field name="min_amount">40000</field>
+        <field name="max_amount">80000</field>
+        <field name="rate">27</field>
+    </record>
+
+    <!-- Tranche 3 : 80 001 à 160 000 DA → 30% -->
+    <record id="irg_line_tranche_3" model="hr.irg.table.line">
+        <field name="table_id" ref="irg_table_2022"/>
+        <field name="sequence">4</field>
+        <field name="min_amount">80000</field>
+        <field name="max_amount">160000</field>
+        <field name="rate">30</field>
+    </record>
+
+    <!-- Tranche 4 : 160 001 à 320 000 DA → 33% -->
+    <record id="irg_line_tranche_4" model="hr.irg.table.line">
+        <field name="table_id" ref="irg_table_2022"/>
+        <field name="sequence">5</field>
+        <field name="min_amount">160000</field>
+        <field name="max_amount">320000</field>
+        <field name="rate">33</field>
+    </record>
+
+    <!-- Tranche 5 : Au-delà de 320 000 DA → 35% -->
+    <record id="irg_line_tranche_5" model="hr.irg.table.line">
+        <field name="table_id" ref="irg_table_2022"/>
+        <field name="sequence">6</field>
+        <field name="min_amount">320000</field>
+        <field name="max_amount">0</field>
+        <field name="rate">35</field>
+    </record>
+
+</odoo>

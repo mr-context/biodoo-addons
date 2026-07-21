@@ -1,9 +1,11 @@
 # PRIVE - ne jamais publier
 bridge/
 hr_assistant/
-data/
-data.back/
-data.backup/
+# Runtime bridge uniquement — ANCRÉ à la racine (le '/' initial) pour ne PAS
+# ignorer le data/ légitime de chaque module Odoo (séquences, crons, tables…).
+/data/
+/data.back/
+/data.backup/
 run.txt
 
 # Secrets

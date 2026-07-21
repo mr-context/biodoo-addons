@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- ============================================================
+             Séquence : 2026/00001, 2026/00002 …
+        ============================================================ -->
+        <record id="seq_hr_sanction" model="ir.sequence">
+            <field name="name">Procédure disciplinaire</field>
+            <field name="code">hr.sanction</field>
+            <field name="prefix">%(range_year)s/</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+            <field name="use_date_range" eval="True"/>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- ============================================================
+             Types de sanction — Loi 90-11 Art.73
+
+             1er degré : sanctions légères
+             2ème degré : sanctions intermédiaires
+             3ème degré : sanctions graves
+             4ème degré : sanction ultime
+        ============================================================ -->
+
+        <!-- 1er degré -->
+        <record id="sanction_type_avert_verbal" model="hr.sanction.type">
+            <field name="name">Avertissement verbal</field>
+            <field name="degree">1</field>
+            <field name="sequence">10</field>
+            <field name="description">Mise en garde orale sans trace écrite au dossier (1er manquement).</field>
+        </record>
+        <record id="sanction_type_avert_ecrit" model="hr.sanction.type">
+            <field name="name">Avertissement écrit</field>
+            <field name="degree">1</field>
+            <field name="sequence">20</field>
+            <field name="description">Réprimande formelle versée au dossier disciplinaire.</field>
+        </record>
+
+        <!-- 2ème degré -->
+        <record id="sanction_type_blame" model="hr.sanction.type">
+            <field name="name">Blâme</field>
+            <field name="degree">2</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="sanction_type_mise_pied_1j" model="hr.sanction.type">
+            <field name="name">Mise à pied 1 jour</field>
+            <field name="degree">2</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="sanction_type_mise_pied_2j" model="hr.sanction.type">
+            <field name="name">Mise à pied 2 jours</field>
+            <field name="degree">2</field>
+            <field name="sequence">30</field>
+        </record>
+        <record id="sanction_type_mise_pied_3j" model="hr.sanction.type">
+            <field name="name">Mise à pied 3 jours</field>
+            <field name="degree">2</field>
+            <field name="sequence">40</field>
+        </record>
+
+        <!-- 3ème degré -->
+        <record id="sanction_type_mise_pied_4j" model="hr.sanction.type">
+            <field name="name">Mise à pied 4 jours</field>
+            <field name="degree">3</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="sanction_type_mise_pied_5j" model="hr.sanction.type">
+            <field name="name">Mise à pied 5 jours</field>
+            <field name="degree">3</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="sanction_type_mise_pied_6j" model="hr.sanction.type">
+            <field name="name">Mise à pied 6 jours</field>
+            <field name="degree">3</field>
+            <field name="sequence">30</field>
+        </record>
+        <record id="sanction_type_mise_pied_7j" model="hr.sanction.type">
+            <field name="name">Mise à pied 7 jours</field>
+            <field name="degree">3</field>
+            <field name="sequence">40</field>
+        </record>
+        <record id="sanction_type_mise_pied_8j" model="hr.sanction.type">
+            <field name="name">Mise à pied 8 jours</field>
+            <field name="degree">3</field>
+            <field name="sequence">50</field>
+        </record>
+        <record id="sanction_type_retrogradation" model="hr.sanction.type">
+            <field name="name">Rétrogradation</field>
+            <field name="degree">3</field>
+            <field name="sequence">60</field>
+            <field name="description">Reclassement à un poste ou échelon inférieur.</field>
+        </record>
+
+        <!-- 4ème degré -->
+        <record id="sanction_type_licenciement" model="hr.sanction.type">
+            <field name="name">Licenciement pour faute grave</field>
+            <field name="degree">4</field>
+            <field name="sequence">10</field>
+            <field name="description">Rupture du contrat de travail sans indemnités.</field>
+        </record>
+
+        <!-- ============================================================
+             Types de fautes professionnelles
+        ============================================================ -->
+
+        <!-- 1er degré — fautes légères -->
+        <record id="fault_ponctualite" model="hr.sanction.fault">
+            <field name="name">Manquement à la ponctualité</field>
+            <field name="degree">1</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="fault_tenue" model="hr.sanction.fault">
+            <field name="name">Non-respect du règlement intérieur (tenue, comportement)</field>
+            <field name="degree">1</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="fault_negligence_legere" model="hr.sanction.fault">
+            <field name="name">Négligence légère dans l'exécution des tâches</field>
+            <field name="degree">1</field>
+            <field name="sequence">30</field>
+        </record>
+
+        <!-- 2ème degré — fautes intermédiaires -->
+        <record id="fault_absence_injustifiee" model="hr.sanction.fault">
+            <field name="name">Absence injustifiée répétée</field>
+            <field name="degree">2</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="fault_desobeissance" model="hr.sanction.fault">
+            <field name="name">Désobéissance aux ordres de service</field>
+            <field name="degree">2</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="fault_negligence_grave" model="hr.sanction.fault">
+            <field name="name">Négligence grave ayant causé un préjudice</field>
+            <field name="degree">2</field>
+            <field name="sequence">30</field>
+        </record>
+
+        <!-- 3ème degré — fautes graves -->
+        <record id="fault_insubordination" model="hr.sanction.fault">
+            <field name="name">Insubordination caractérisée</field>
+            <field name="degree">3</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="fault_faute_professionnelle_grave" model="hr.sanction.fault">
+            <field name="name">Faute professionnelle grave avec préjudice à l'organisme</field>
+            <field name="degree">3</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="fault_abandon_poste" model="hr.sanction.fault">
+            <field name="name">Abandon de poste</field>
+            <field name="degree">3</field>
+            <field name="sequence">30</field>
+        </record>
+
+        <!-- 4ème degré — fautes très graves -->
+        <record id="fault_vol" model="hr.sanction.fault">
+            <field name="name">Vol ou détournement de biens de l'organisme</field>
+            <field name="degree">4</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="fault_violence" model="hr.sanction.fault">
+            <field name="name">Violence ou voies de fait sur un collègue ou responsable</field>
+            <field name="degree">4</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="fault_divulgation" model="hr.sanction.fault">
+            <field name="name">Divulgation de secrets professionnels</field>
+            <field name="degree">4</field>
+            <field name="sequence">30</field>
+        </record>
+        <record id="fault_falsification" model="hr.sanction.fault">
+            <field name="name">Falsification de documents officiels</field>
+            <field name="degree">4</field>
+            <field name="sequence">40</field>
+        </record>
+
+    </data>
+</odoo>

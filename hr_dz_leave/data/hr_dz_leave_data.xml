@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Création du type de congé (noupdate : ne pas écraser les modifs manuelles) -->
+    <data noupdate="1">
+        <record id="leave_type_annual_dz" model="hr.leave.type">
+            <field name="name">Congé annuel</field>
+            <field name="requires_allocation" eval="True"/>
+            <field name="allocation_validation_type">no_validation</field>
+            <field name="leave_validation_type">hr</field>
+            <field name="request_unit">day</field>
+            <field name="time_type">leave</field>
+        </record>
+    </data>
+
+    <!-- Lien work_entry_type (noupdate=0 : toujours appliqué lors de -u) -->
+    <data noupdate="0">
+        <record id="leave_type_annual_dz" model="hr.leave.type">
+            <field name="work_entry_type_id" ref="hr_dz_work_entry.work_entry_type_annual_leave"/>
+        </record>
+    </data>
+
+</odoo>

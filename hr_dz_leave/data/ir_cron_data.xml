@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- ================================================================
+             Cron journalier : calcul des droits au congé depuis le pointage
+             Heure : 6h00 chaque matin (traite la veille)
+        ================================================================ -->
+        <record id="ir_cron_dz_daily_leave_accrual" model="ir.cron">
+            <field name="name">DZ — Calcul journalier droits au congé (pointage)</field>
+            <field name="model_id" ref="hr_holidays.model_hr_leave_allocation"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_dz_daily_leave_accrual()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+        </record>
+
+    </data>
+</odoo>

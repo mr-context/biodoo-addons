@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <!-- Les types sont rattachés à l'équipe RH existante (assistance.team_rh).
+             Ainsi un seul bouton "Ressources Humaines" sur le portail affiche
+             le sélecteur de types à l'intérieur. -->
+
+        <record id="hr_request_type_mission" model="hr.request.type">
+            <field name="name">Ordre de mission</field>
+            <field name="code">MISSION</field>
+            <field name="sequence">10</field>
+            <field name="team_id" ref="assistance.team_rh"/>
+            <field name="requires_dates" eval="True"/>
+            <field name="icon">bi-airplane</field>
+            <field name="description">Demande d'autorisation de déplacement professionnel.</field>
+        </record>
+
+        <record id="hr_request_type_sortie" model="hr.request.type">
+            <field name="name">Bon de sortie</field>
+            <field name="code">SORTIE</field>
+            <field name="sequence">20</field>
+            <field name="team_id" ref="assistance.team_rh"/>
+            <field name="requires_dates" eval="True"/>
+            <field name="icon">bi-door-open</field>
+            <field name="description">Autorisation de sortie pendant les heures de travail.</field>
+        </record>
+
+        <record id="hr_request_type_conge" model="hr.request.type">
+            <field name="name">Demande de congé</field>
+            <field name="code">CONGE</field>
+            <field name="sequence">30</field>
+            <field name="team_id" ref="assistance.team_rh"/>
+            <field name="requires_dates" eval="True"/>
+            <field name="creates_hr_leave" eval="False"/>
+            <field name="icon">bi-calendar-check</field>
+            <field name="description">Demande de congé annuel ou exceptionnel.</field>
+        </record>
+
+    </data>
+</odoo>

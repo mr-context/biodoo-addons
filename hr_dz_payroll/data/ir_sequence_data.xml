@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="seq_hr_dz_ats" model="ir.sequence">
+        <field name="name">ATS Sequence</field>
+        <field name="code">hr.dz.ats</field>
+        <field name="prefix">ATS/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_hr_dz_301bis" model="ir.sequence">
+        <field name="name">301 Bis Sequence</field>
+        <field name="code">hr.dz.301bis</field>
+        <field name="prefix">301BIS/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_hr_dz_das" model="ir.sequence">
+        <field name="name">DAS CNAS Sequence</field>
+        <field name="code">hr.dz.das</field>
+        <field name="prefix">DAS/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+</odoo>

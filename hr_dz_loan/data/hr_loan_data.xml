@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Séquence : LN0001, LN0002 … -->
+        <record id="seq_hr_loan" model="ir.sequence">
+            <field name="name">Prêt salarial</field>
+            <field name="code">hr.loan</field>
+            <field name="prefix">LN</field>
+            <field name="padding">4</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Type de demande RH : Prêt salarial -->
+        <record id="hr_request_type_loan" model="hr.request.type">
+            <field name="name">Prêt salarial</field>
+            <field name="code">LOAN</field>
+            <field name="sequence">40</field>
+            <field name="requires_dates" eval="False"/>
+            <field name="requires_justification" eval="True"/>
+            <field name="icon">bi-cash-coin</field>
+            <field name="description">Demande de prêt salarial sans intérêts, remboursable par mensualités sur bulletin de paie.</field>
+        </record>
+
+    </data>
+
+    <!-- ================================================================
+         Règle salariale : Remboursement de prêt
+         Activée uniquement si l'input LOAN_REPAY est présent sur le bulletin
+    ================================================================ -->
+    <record id="rule_loan_repay" model="hr.salary.rule">
+        <field name="name">Remboursement Prêt Salarial</field>
+        <field name="code">LOAN_REPAY</field>
+        <field name="sequence">91</field>
+        <field name="category_id" ref="hr_dz_payroll.category_deduction"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">result = bool(inputs.LOAN_REPAY and inputs.LOAN_REPAY.amount > 0)</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = -inputs.LOAN_REPAY.amount</field>
+        <field name="appears_on_payslip" eval="True"/>
+    </record>
+
+    <!-- Ajout de la règle à la structure algérienne de base -->
+    <record id="hr_dz_payroll.structure_dz_base" model="hr.payroll.structure">
+        <field name="rule_ids" eval="[(4, ref('rule_loan_repay'))]"/>
+    </record>
+
+</odoo>

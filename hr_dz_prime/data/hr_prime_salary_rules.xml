@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         RÈGLES SALARIALES — PRIMES EXCEPTIONNELLES
+         ─────────────────────────────────────────────────────────────────
+         Liaison automatique : si une campagne confirmée/payée a sa date
+         dans la période du bulletin, les montants apparaissent ici.
+
+         seq 29 : PRIME_EXC_COT    — Cotisables → IND → GROSS → CNAS + IRG
+         seq 30 : PRIME_EXC_NC     — Non cotisables → NON_COT → NET
+         seq 91 : IRG_PRIME_FORF   — IRG forfaitaire/libératoire (RET)
+    ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- ── Primes exceptionnelles cotisables (→ GROSS → CNAS + IRG) ──── -->
+    <record id="rule_prime_exc_cot" model="hr.salary.rule">
+        <field name="name">Primes Exceptionnelles (cotisables)</field>
+        <field name="code">PRIME_EXC_COT</field>
+        <field name="sequence">29</field>
+        <field name="category_id" ref="hr_dz_payroll.category_allowance"/>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+_primes = payslip.env['hr.prime.campaign'].get_employee_primes(
+    employee.id, payslip.date_from, payslip.date_to)
+result = _primes['cotisable'] > 0
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+_primes = payslip.env['hr.prime.campaign'].get_employee_primes(
+    employee.id, payslip.date_from, payslip.date_to)
+result = _primes['cotisable']
+        </field>
+    </record>
+
+    <!-- ── Primes exceptionnelles non cotisables (→ NET, pas dans GROSS) ── -->
+    <record id="rule_prime_exc_nc" model="hr.salary.rule">
+        <field name="name">Primes Exceptionnelles (non cotisables)</field>
+        <field name="code">PRIME_EXC_NC</field>
+        <field name="sequence">30</field>
+        <field name="category_id" ref="hr_dz_payroll.category_non_cotisable"/>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+_primes = payslip.env['hr.prime.campaign'].get_employee_primes(
+    employee.id, payslip.date_from, payslip.date_to)
+result = _primes['non_cotisable'] > 0
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+_primes = payslip.env['hr.prime.campaign'].get_employee_primes(
+    employee.id, payslip.date_from, payslip.date_to)
+result = _primes['non_cotisable']
+        </field>
+    </record>
+
+    <!-- ── IRG forfaitaire/libératoire sur primes exceptionnelles ──────── -->
+    <!-- Taux fixe (ex: 10%) appliqué directement sur le montant brut.     -->
+    <!-- Ce montant est EXCLU du barème progressif (imposable normal).      -->
+    <record id="rule_irg_prime_forfait" model="hr.salary.rule">
+        <field name="name">IRG Forfaitaire (Primes Except.)</field>
+        <field name="code">IRG_PRIME_FORF</field>
+        <field name="sequence">91</field>
+        <field name="category_id" ref="hr_dz_payroll.category_deduction"/>
+        <field name="appears_on_payslip" eval="True"/>
+        <field name="condition_select">python</field>
+        <field name="condition_python">
+_primes = payslip.env['hr.prime.campaign'].get_employee_primes(
+    employee.id, payslip.date_from, payslip.date_to)
+result = len(_primes['forfaitaire']) > 0
+        </field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">
+# IRG libératoire : taux fixe × montant brut de chaque campagne forfaitaire
+_primes = payslip.env['hr.prime.campaign'].get_employee_primes(
+    employee.id, payslip.date_from, payslip.date_to)
+_total_irg = 0.0
+for _amount, _taux in _primes['forfaitaire']:
+    _total_irg += round(_amount * _taux / 100.0, 2)
+result = -_total_irg
+        </field>
+    </record>
+
+    <!-- ── Ajout des règles à la structure DZ_BASE ─────────────────────── -->
+    <record id="hr_dz_payroll.structure_dz_base" model="hr.payroll.structure">
+        <field name="rule_ids" eval="[(4, ref('rule_prime_exc_cot')),
+                                      (4, ref('rule_prime_exc_nc')),
+                                      (4, ref('rule_irg_prime_forfait'))]"/>
+    </record>
+
+</odoo>
